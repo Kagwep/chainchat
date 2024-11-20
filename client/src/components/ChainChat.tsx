@@ -1,3 +1,5 @@
+"use client"
+
 import { Coins, Copy, ExternalLink, Loader2, Wallet,X,Menu } from 'lucide-react';
 import React, { useState } from 'react';
 import { ApiResponse, Message, WalletInfo } from '../types';
@@ -226,7 +228,7 @@ const ChainChat = () => {
           {
             headers: {
               "Content-Type": "application/json",
-              "x-brian-api-key": import.meta.env.VITE_API_KEY, // Replace with your actual API key
+              "x-brian-api-key": import.meta.env.VITE_BRIAN, // Replace with your actual API key
             },
           }
         );

@@ -1,3 +1,5 @@
+"use client"
+
 // WalletContext.tsx
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { connect, disconnect } from "starknetkit-latest"
