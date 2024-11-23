@@ -1,0 +1,671 @@
+{
+    "result": [
+        {
+            "name": "transfer",
+            "description": "Movement of digital assets from one account to another within the blockchain network.",
+            "parameters": [
+                {
+                    "name": "receiver",
+                    "type": "string",
+                    "description": "The recipient address",
+                    "mandatory": true
+                },
+                {
+                    "name": "token1",
+                    "type": "string",
+                    "description": "The token to transfer",
+                    "mandatory": true
+                },
+                {
+                    "name": "amount",
+                    "type": "string",
+                    "description": "The amount of tokens to transfer",
+                    "mandatory": true
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "swap",
+            "description": "A transaction where a user exchanges one ERC-20 token for another. The receiver of a swap can be different from the one executing it.",
+            "parameters": [
+                {
+                    "name": "token1",
+                    "type": "string",
+                    "description": "The token to swap from",
+                    "mandatory": true
+                },
+                {
+                    "name": "token2",
+                    "type": "string",
+                    "description": "The token to swap to",
+                    "mandatory": true
+                },
+                {
+                    "name": "amount",
+                    "type": "string",
+                    "description": "The amount of tokens to swap",
+                    "mandatory": true
+                },
+                {
+                    "name": "receiver",
+                    "type": "string",
+                    "description": "The receiver of the swap",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "bridge",
+            "description": "A transaction that facilitates the relay of information between different blockchains, allowing for the seamless transfer of data, assets, or transactions between them.",
+            "parameters": [
+                {
+                    "name": "token1",
+                    "type": "string",
+                    "description": "The token to bridge",
+                    "mandatory": true
+                },
+                {
+                    "name": "token2",
+                    "type": "string",
+                    "description": "The token to bridge to",
+                    "mandatory": false
+                },
+                {
+                    "name": "amount",
+                    "type": "string",
+                    "description": "The amount of tokens to bridge",
+                    "mandatory": true
+                },
+                {
+                    "name": "dest_chain",
+                    "type": "string",
+                    "description": "The destination chain",
+                    "mandatory": true
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "deposit",
+            "description": "A transfer of funds to a smart contract or a protocol (like aave, lido, compound, gearbox, frax, spark and many others).",
+            "parameters": [
+                {
+                    "name": "token1",
+                    "type": "string",
+                    "description": "The token to deposit",
+                    "mandatory": true
+                },
+                {
+                    "name": "amount",
+                    "type": "string",
+                    "description": "The amount to deposit",
+                    "mandatory": true
+                },
+                {
+                    "name": "protocol",
+                    "type": "string",
+                    "description": "The protocol to deposit to",
+                    "mandatory": true
+                },
+                {
+                    "name": "receiver",
+                    "type": "string",
+                    "description": "The receiver of the deposit",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "withdraw",
+            "description": "A transfer of funds from a smart contract or a protocol back to a specific address.",
+            "parameters": [
+                {
+                    "name": "token1",
+                    "type": "string",
+                    "description": "The token to withdraw",
+                    "mandatory": true
+                },
+                {
+                    "name": "protocol",
+                    "type": "string",
+                    "description": "The protocol to withdraw from",
+                    "mandatory": true
+                },
+                {
+                    "name": "amount",
+                    "type": "string",
+                    "description": "The amount to withdraw",
+                    "mandatory": false
+                },
+                {
+                    "name": "withdrawpercentage",
+                    "type": "string",
+                    "description": "The percentage of the position to withdraw",
+                    "mandatory": false
+                },
+                {
+                    "name": "receiver",
+                    "type": "string",
+                    "description": "The receiver of the withdraw",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "balance",
+            "description": "Amount of tokens a specific address has",
+            "parameters": [
+                {
+                    "name": "token1",
+                    "type": "string",
+                    "description": "The token to check the balance for",
+                    "mandatory": true
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                },
+                {
+                    "name": "address",
+                    "type": "string",
+                    "description": "The address to check the balance for",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "approve",
+            "description": "Allows one address to use the tokens of another address",
+            "parameters": [
+                {
+                    "name": "spender",
+                    "type": "string",
+                    "description": "The address to approve",
+                    "mandatory": true
+                },
+                {
+                    "name": "token1",
+                    "type": "string",
+                    "description": "The token to approve",
+                    "mandatory": true
+                },
+                {
+                    "name": "amount",
+                    "type": "string",
+                    "description": "The amount to approve",
+                    "mandatory": true
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "totalsupply",
+            "description": "The overall amount of a specific asset that is available in circulation",
+            "parameters": [
+                {
+                    "name": "token1",
+                    "type": "string",
+                    "description": "The token to check the total supply for",
+                    "mandatory": true
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "ensresolution",
+            "description": "The process of mapping an Ethereum address to an ENS domain name and viceversa",
+            "parameters": [
+                {
+                    "name": "addressToResolve",
+                    "type": "string",
+                    "description": "The address to resolve to an ENS domain name",
+                    "mandatory": true
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "borrow",
+            "description": "A process of opening a loan position on AAVE protocol by receiving an amount of money from AAVE based on the deposited collateralization.",
+            "parameters": [
+                {
+                    "name": "token1",
+                    "type": "string",
+                    "description": "The token to borrow",
+                    "mandatory": true
+                },
+                {
+                    "name": "amount",
+                    "type": "string",
+                    "description": "The amount to borrow",
+                    "mandatory": true
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "repay",
+            "description": "A process of closing a loan position on AAVE protocol by sending the amount borrowed previously",
+            "parameters": [
+                {
+                    "name": "token1",
+                    "type": "string",
+                    "description": "The token to repay",
+                    "mandatory": true
+                },
+                {
+                    "name": "amount",
+                    "type": "string",
+                    "description": "The amount to repay",
+                    "mandatory": true
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "lendingborrowallowance",
+            "description": "Checks how much a user can borrow on AAVE lending protocol",
+            "parameters": [
+                {
+                    "name": "address",
+                    "type": "string",
+                    "description": "The address to check the borrow allowance for",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "lendingcollateral",
+            "description": "Checks how much is the collateral deposited into AAVE lending protocol by a user",
+            "parameters": [
+                {
+                    "name": "address",
+                    "type": "string",
+                    "description": "The address to check the collateral for",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "lendinghealthfactor",
+            "description": "Checks what is the health factor of a user on AAVE lending protocol",
+            "parameters": [
+                {
+                    "name": "address",
+                    "type": "string",
+                    "description": "The address to check the health factor for",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "lendingpositioninfo",
+            "description": "Checks a series of info regarding the user open position on AAVE lending protocol",
+            "parameters": [
+                {
+                    "name": "address",
+                    "type": "string",
+                    "description": "The address to check the position info for",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "lendingborrowinfo",
+            "description": "Checks how much the debt the user has to repay to close his loan position on AAVE lending protocol",
+            "parameters": [
+                {
+                    "name": "address",
+                    "type": "string",
+                    "description": "The address to check the borrow info for",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "lendingltv",
+            "description": "Checks the LTV - Loan To Value of a user on AAVE lending protocol",
+            "parameters": [
+                {
+                    "name": "address",
+                    "type": "string",
+                    "description": "The address to check the LTV for",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "lendingliquidationthreshold",
+            "description": "Checks the liquidation threshold of a user on AAVE lending protocol. It's defined as the percentage at which a position is defined as undercollateralised.",
+            "parameters": [
+                {
+                    "name": "address",
+                    "type": "string",
+                    "description": "The address to check the liquidation threshold for",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "askbrian",
+            "description": "User can ask information to brian such as what does a project do or specific questions about documentation",
+            "parameters": [
+                {
+                    "name": "question",
+                    "type": "string",
+                    "description": "The question to ask Brian",
+                    "mandatory": true
+                }
+            ]
+        },
+        {
+            "name": "tokens",
+            "description": "Get information about user's portfolio or owned tokens.",
+            "parameters": [
+                {
+                    "name": "address",
+                    "type": "string",
+                    "description": "The address to check the tokens for",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "ensavailability",
+            "description": "A check to see if a domain is available for registration",
+            "parameters": [
+                {
+                    "name": "domain",
+                    "type": "string",
+                    "description": "The ENS domain to check availability for",
+                    "mandatory": true
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "ensexpiration",
+            "description": "A check to see when a ENS domain will expire",
+            "parameters": [
+                {
+                    "name": "domain",
+                    "type": "string",
+                    "description": "The ENS domain to check expiration for",
+                    "mandatory": true
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "ensregistrationcost",
+            "description": "A check to see how much it costs to register a domain for a specific duration",
+            "parameters": [
+                {
+                    "name": "domain",
+                    "type": "string",
+                    "description": "The ENS domain to check registration cost for",
+                    "mandatory": true
+                },
+                {
+                    "name": "duration",
+                    "type": "string",
+                    "description": "The duration in days for the registration",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "ensrenewalcost",
+            "description": "A check to see how much it costs to renew a domain for a specific duration",
+            "parameters": [
+                {
+                    "name": "domain",
+                    "type": "string",
+                    "description": "The ENS domain to check renewal cost for",
+                    "mandatory": true
+                },
+                {
+                    "name": "duration",
+                    "type": "string",
+                    "description": "The duration in days for the renewal",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "ensregistration",
+            "description": "A commitment to register a domain for a specific duration",
+            "parameters": [
+                {
+                    "name": "domain",
+                    "type": "string",
+                    "description": "The ENS domain to register",
+                    "mandatory": true
+                },
+                {
+                    "name": "duration",
+                    "type": "string",
+                    "description": "The duration in days for the registration",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "ensrenewal",
+            "description": "Renew a domain for a specific duration",
+            "parameters": [
+                {
+                    "name": "domain",
+                    "type": "string",
+                    "description": "The ENS domain to renew",
+                    "mandatory": true
+                },
+                {
+                    "name": "duration",
+                    "type": "string",
+                    "description": "The duration in days for the renewal",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "onramp",
+            "description": "A process of converting fiat currency to digital assets",
+            "parameters": [
+                {
+                    "name": "amount",
+                    "type": "number",
+                    "description": "The amount of fiat currency to convert",
+                    "mandatory": true
+                },
+                {
+                    "name": "token1",
+                    "type": "string",
+                    "description": "The digital asset to receive",
+                    "mandatory": true
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                }
+            ]
+        },
+        {
+            "name": "searchtoken",
+            "description": "A process of searching for investment opportunities, represented by a token tokenized position, based on different parameters",
+            "parameters": [
+                {
+                    "name": "keyword",
+                    "type": "string",
+                    "description": "The keyword to search for",
+                    "mandatory": false
+                },
+                {
+                    "name": "apy",
+                    "type": "string",
+                    "description": "The minimum apy of the token to search for",
+                    "mandatory": false
+                },
+                {
+                    "name": "chain",
+                    "type": "string",
+                    "description": "The blockchain network to use",
+                    "mandatory": false
+                },
+                {
+                    "name": "liquidity",
+                    "type": "string",
+                    "description": "The minimum liquidity of the token to search for",
+                    "mandatory": false
+                },
+                {
+                    "name": "protocol",
+                    "type": "string",
+                    "description": "The protocol to search for",
+                    "mandatory": false
+                }
+            ]
+        }
+    ],
+    "additionalInfo": "API Requirements:\n- The request body must include an 'address' parameter representing the address requesting the action.\n- An optional 'chainId' parameter can be provided in the request body.\n- If 'chainId' is not provided, the 'chain' parameter in the prompt becomes mandatory for actions that involve blockchain operations.\n- The 'address' parameter from the request body will be used as default for any action parameter named 'address' when not explicitly provided."
+}

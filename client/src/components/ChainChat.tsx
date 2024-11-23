@@ -1,8 +1,8 @@
 "use client"
 
-import { Coins, Copy, ExternalLink, Loader2, Wallet,X,Menu } from 'lucide-react';
+import { Send, Bot, User, DollarSign, Menu, X, Wallet, Copy, Loader2, ExternalLink, Coins } from 'lucide-react';
 import React, { useState } from 'react';
-import { ApiResponse, Message, WalletInfo } from '../types';
+import { ApiResponse,  WalletInfo } from '../types';
 import { useAccount, useConnect, useContract, useDisconnect } from '@starknet-react/core';
 import { executeTransaction } from '../utils/Transaction';
 import TransactionModal from './TransactionModal';
@@ -11,11 +11,29 @@ import Erc20Abi from '../abi/ERC20.json'
 import { Abi, Contract } from 'starknet';
 import axios from "axios";
 import { useWallet } from '../contexts/WalletContext';
+import { brian } from '../utils/Generate';
+import { AskRequestBody, ChatRequestBody, ExtractParametersRequestBody,GenerateCodeRequestBody } from '@brian-ai/sdk';
+
+
+interface Message {
+  id: string;
+  sender: 'user' | 'agent';
+  text: string;
+  timestamp: Date;
+  txHash?: string;
+  mode: 'chat' | 'transaction';
+}
+
+interface TokenBalance {
+  symbol: string;
+  balance: string;
+  value: string;
+  change: number;
+}
 
 // Utility function to format addresses in text
 const formatMessageText = (text: string) => {
-  // Regular expression to match both Starknet (0x followed by 64 hex characters)
-  // and Ethereum-style addresses (0x followed by 40 hex characters)
+  // Regular expression for both Starknet and Ethereum addresses
   const addressRegex = /(0x[a-fA-F0-9]{64}|0x[a-fA-F0-9]{40})/g;
   
   // Split the text into parts, with addresses and regular text separated
@@ -23,19 +41,17 @@ const formatMessageText = (text: string) => {
   
   return parts.map((part, index) => {
     if (part.match(addressRegex)) {
-      // Check if it's a Starknet address (64 chars after 0x) or Ethereum address (40 chars after 0x)
       const isStarknetAddress = part.length === 66; // 0x + 64 chars
+      const truncated = `${part.slice(0, 6)}...${part.slice(-4)}`;
       
-      if (isStarknetAddress) {
-        // For Starknet addresses, show first 6 and last 4 chars
-        return `${part.slice(0, 6)}...${part.slice(-4)}`;
-      } else {
-        // For Ethereum addresses, show first 6 and last 4 chars
-        return `${part.slice(0, 6)}...${part.slice(-4)}`;
-      }
+      return (
+        <span key={index} className="font-mono bg-gray-700/50 px-1 rounded">
+          {truncated}
+        </span>
+      );
     }
-    return part;
-  }).join('');
+    return <span key={index}>{part}</span>;
+  });
 };
 
 // Utility function for copying to clipboard
@@ -49,7 +65,7 @@ const copyToClipboard = async (text: string) => {
   }
 };
 
-const TokenBalance = ({ symbol, balance, value, change }) => (
+const TokenBalance = ({ symbol, balance, value, change }: TokenBalance) => (
   <div className="p-4 bg-gray-800 rounded-lg mb-2">
     <div className="flex justify-between items-center">
       <div className="flex items-center space-x-2">
@@ -65,7 +81,7 @@ const TokenBalance = ({ symbol, balance, value, change }) => (
       </div>
     </div>
   </div>
-);
+);;
 
 // Enhanced Message component to handle address formatting
 const ChatMessage = ({ message }: { message: Message }) => {
@@ -79,45 +95,87 @@ const ChatMessage = ({ message }: { message: Message }) => {
     }
   };
 
+  const handleCopyMessage = async (message: Message) => {
+    // Construct text with message and time, plus transaction details if available
+    const copyText = [
+      message.text,
+      `Time: ${message.timestamp.toLocaleTimeString()}`,
+      message.txHash && `Transaction: ${message.txHash}`,
+      message.txHash && `Explorer: https://starkscan.co/tx/${message.txHash}`
+    ].filter(Boolean).join('\n');
+
+    const success = await copyToClipboard( copyText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} ${
+      message.id === '1' ? 'mt-4' : ''
+    }`}>
+      {message.sender === 'agent' && (
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 flex-shrink-0 ${
+          message.mode === 'transaction' ? 'bg-purple-900' : 'bg-gray-700'
+        }`}>
+          <Bot size={20} className="text-blue-400" />
+        </div>
+      )}
+      
       <div
-        className={`max-w-[70%] rounded-lg p-4 ${
+        className={`max-w-[80%] sm:max-w-[70%] rounded-lg p-4 ${
           message.sender === 'user'
             ? 'bg-blue-600 text-white'
+            : message.id === '1'
+            ? 'bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white'
             : 'bg-gray-800 text-gray-100'
         } shadow-lg relative group`}
       >
         <div className="space-y-1.5">
-          <p className="text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed whitespace-pre-line">
             {formatMessageText(message.text)}
-            {message.text.match(/(0x[a-fA-F0-9]{40})/g) && (
-              <button
-                onClick={() => handleCopy(message.text)}
-                className="ml-2 inline-flex items-center text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-              >
-                {copied ? (
-                  <span className="text-green-400 text-xs">Copied!</span>
-                ) : (
-                  <Copy size={12} className="text-gray-300 hover:text-white transition-colors" />
-                )}
-              </button>
+            {message.text && (
+                <div className="group">
+                 
+                <button
+                  onClick={() => handleCopyMessage(message)} 
+                  className="ml-2 inline-flex items-center text-xs opacity-100 group-hover:opacity-100 transition-opacity duration-200"
+                >
+                  {copied ? (
+                    <span className="text-green-400 text-xs">Copied!</span>
+                  ) : (
+                    <Copy size={12} className="text-gray-300 hover:text-white transition-colors" />
+                  )}
+                </button>
+              </div>
             )}
           </p>
           <div className="flex items-center space-x-2 text-xs opacity-60">
-            <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
-            {message.txHash && (
+              <span>{message.timestamp.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}</span>
+              {message.txHash && (
               <a 
-                href="#" 
-                className="flex items-center space-x-1 hover:text-blue-300 transition-colors duration-150"
-              >
-                <span>Tx: {message.txHash}</span>
-                <ExternalLink size={12} />
-              </a>
+              href={`https://starkscan.co/tx/${message.txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-1 hover:text-blue-300 transition-colors duration-150"
+            >
+              <span>Tx: {message.txHash.slice(0, 6)}...{message.txHash.slice(-4)}</span>
+              <ExternalLink size={12} />
+            </a>
             )}
           </div>
         </div>
       </div>
+
+      {message.sender === 'user' && (
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center ml-2 flex-shrink-0 ${
+          message.mode === 'transaction' ? 'bg-purple-600' : 'bg-blue-600'
+        }`}>
+          <User size={20} className="text-white" />
+        </div>
+      )}
     </div>
   );
 };
@@ -126,11 +184,32 @@ const ChainChat = () => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: 1,
-      text: "Connection established via Starknet. Start your on-chain conversation.",
-      sender: 'bot',
+      id: '1',
+      sender: 'agent',
+      text: "👋 Welcome! I'm your Web3 assistant. I can help you with:",
       timestamp: new Date(),
-      txHash: '0x123...456'
+      mode: 'chat'
+    },
+    {
+      id: '2',
+      sender: 'agent',
+      text: "💬 Chat Mode:\n• Get blockchain information\n• Check token prices\n• Learn about DeFi protocols",
+      timestamp: new Date(),
+      mode: 'chat'
+    },
+    {
+      id: '3',
+      sender: 'agent',
+      text: "💰 Transaction Mode:\n• Send tokens\n• Swap tokens\n• Approve contracts\n• Deploy contracts",
+      timestamp: new Date(),
+      mode: 'chat'
+    },
+    {
+      id: '4',
+      sender: 'agent',
+      text: "Switch modes using the toggle above. Your wallet balances are available in the side panel. How can I assist you today?",
+      timestamp: new Date(),
+      mode: 'chat'
     }
   ]);
   const [inputText, setInputText] = useState('');
@@ -141,6 +220,7 @@ const ChainChat = () => {
   const [response, setResponse] = useState<ApiResponse | null>(null);
   const [copied, setCopied] = useState(false);
   const [selectedWalletSWO, setSelectedWalletSWO] = useState(null);
+  const [mode, setMode] = useState<'chat' | 'transaction'>('transaction');
 
   const {
     wallet,
@@ -163,6 +243,7 @@ const ChainChat = () => {
   //   abi: Erc20Abi as Abi,
   //   address: ETHTokenAddress,
   // });
+
 
   const erc20Contract = new Contract(
     Erc20Abi as any,
@@ -211,51 +292,136 @@ const ChainChat = () => {
 
 
   const handleSend = async () => {
+    
     if (inputText.trim() && !isTransacting) {
       setIsTransacting(true);
-  
-      try {
-        // Prepare request data
-        const requestBody = {
-          prompt: inputText,
-          address: address, // Replace with the actual user wallet address if applicable
-        };
-  
-        // Call API
-        const response = await axios.post(
-          "https://api.brianknows.org/api/v0/agent/transaction",
-          requestBody,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              "x-brian-api-key": import.meta.env.VITE_BRIAN, // Replace with your actual API key
-            },
-          }
-        );
 
-        console.log(response.data);
-  
-        const result = response.data.result?.[0]; // Get the first result
-        if (result) {
-          const conversationHistory = result.conversationHistory || [];
-  
-          // Transform conversation history into messages
-          const newMessages = conversationHistory.map((entry: any, index: number) => ({
-            id: messages.length + index + 1,
-            text: entry.content,
-            sender: entry.sender,
+     
+
+      if(mode === 'chat'){
+        try {
+          console.log('User input:', inputText);
+        
+          // Create new message object
+          const newMessage = {
+            id: (messages.length + 1).toString(),
+            text: inputText,
+            sender: 'user' as const,
             timestamp: new Date(),
-          }));
-  
-          setMessages((prev) => [...prev, ...newMessages]);
-          handleTransactionResponse(response.data);
-         
-        } else {
-          console.error("No result found in the API response.");
+            mode: 'chat' as const
+          };
+        
+          // First update to show user message immediately
+          setMessages(prevMessages => [...prevMessages, newMessage]);
+        
+          // Make API request
+          const response = await brian.ask({
+            prompt: inputText,
+            kb: 'starknet_kb'
+          });
+        
+          // Create response message
+          const agentResponse = {
+            id: (messages.length + 2).toString(), // +2 because we already added user message
+            text: response.answer,
+            sender: 'agent' as const,
+            timestamp: new Date(),
+            mode: 'chat' as const
+          };
+        
+          // Update with both messages
+          setMessages(prevMessages => [...prevMessages, agentResponse]);
+        
+          console.log('API response:', response);
+        
+        } catch (error) {
+          console.error('Error processing message:', error);
+          
+          // Optional: Add error message to chat
+          const errorMessage = {
+            id: (messages.length + 2).toString(),
+            text: 'Sorry, there was an error processing your message. Please try again.',
+            sender: 'agent' as const,
+            timestamp: new Date(),
+            mode: 'chat' as const
+          };
+          
+          setMessages(prevMessages => [...prevMessages, errorMessage]);
         }
-      } catch (error: any) {
-        console.error("Error occurred during transaction:", error.response?.data || error.message);
+
+      }else {
+        try {
+          // Prepare request data
+          const requestBody = {
+            prompt: inputText,
+            address: address, // Replace with the actual user wallet address if applicable
+          };
+    
+          // Call API
+          const response = await axios.post(
+            "https://api.brianknows.org/api/v0/agent/transaction",
+            requestBody,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                "x-brian-api-key": import.meta.env.VITE_BRIAN, // Replace with your actual API key
+              },
+            }
+          );
+  
+          console.log(response.data);
+
+
+          if(response.data.result[0]?.action === "balance"){
+
+            const result = response.data.result?.[0];
+
+            if(result){
+              const conversationHistory = result.conversationHistory || [];
+    
+              // Transform conversation history into messages
+              const newMessages = conversationHistory.map((entry: any, index: number) => ({
+                id: messages.length + index + 1,
+                text: entry.content,
+                sender: entry.sender === 'user' ? entry.sender : 'agent',
+                timestamp: new Date(),
+                mode: 'transaction'
+              }));
+      
+              setMessages((prev) => [...prev, ...newMessages]);
+              setIsProcessing(false);
+              return
+            }
+
+          }
+
+
+    
+          const result = response.data.result?.[0]; // Get the first result
+          if (result) {
+            const conversationHistory = result.conversationHistory || [];
+    
+            // Transform conversation history into messages
+            const newMessages = conversationHistory.map((entry: any, index: number) => ({
+              id: messages.length + index + 1,
+              text: entry.content,
+              sender: entry.sender === 'user' ? entry.sender : 'agent',
+              timestamp: new Date(),
+              mode: 'transaction'
+            }));
+    
+            setMessages((prev) => [...prev, ...newMessages]);
+            handleTransactionResponse(response.data);
+           
+          } else {
+            console.error("No result found in the API response.");
+          }
+        } catch (error: any) {
+          console.error("Error occurred during transaction:", error.response?.data || error.message);
+        }
       }
+  
+
   
       // Reset the input and transaction state
       setInputText("");
@@ -288,7 +454,7 @@ const ChainChat = () => {
 
   return (
     <>
-    <div className="flex h-screen bg-gray-900">
+<div className="flex h-screen bg-gray-900">
       {/* Side Panel */}
       <div 
         className={`fixed inset-y-0 left-0 transform ${
@@ -317,7 +483,7 @@ const ChainChat = () => {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="bg-gray-800 border-b border-gray-700 p-4">
-          <div className="flex justify-between items-center max-w-6xl mx-auto">
+          <div className="flex items-center justify-between max-w-6xl mx-auto w-full">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setIsSidePanelOpen(true)}
@@ -325,26 +491,55 @@ const ChainChat = () => {
               >
                 <Menu size={24} />
               </button>
-              <div className="flex items-center space-x-2 px-3 py-1 bg-gray-700 rounded-full text-sm text-gray-300">
-                <Wallet size={16} />
-                <span>{address ? `${address.slice(0, 6)}...${address.slice(-4)}` : ''}</span>
-                <button onClick={() => handleCopy(address as string)} className="hover:text-gray-100">
-                {copied ? (
-                  <span className="text-green-400 text-xs">Copied!</span>
-                ) : (
-                  <Copy size={12} className="text-gray-300 hover:text-white transition-colors" />
-                )}
+              
+              {/* Mode Switch */}
+              <div className="hidden sm:flex rounded-lg overflow-hidden border border-gray-700">
+                <button
+                  onClick={() => setMode('chat')}
+                  className={`px-4 py-2 flex items-center gap-2 text-sm ${
+                    mode === 'chat' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  <User size={16} />
+                  <span>Chat</span>
+                </button>
+                <button
+                  onClick={() => setMode('transaction')}
+                  className={`px-4 py-2 flex items-center gap-2 text-sm ${
+                    mode === 'transaction' 
+                      ? 'bg-purple-600 text-white' 
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  <DollarSign size={16} />
+                  <span>Transaction</span>
                 </button>
               </div>
-              <button
-                onClick={handleDisconnect}
-                disabled={isLoading}
-                className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors duration-150 flex items-center space-x-2 disabled:bg-red-300"
-              >
-                {isLoading && <Loader2 className="animate-spin" size={16} />}
-                <span>Disconnect</span>
-              </button>
+            </div>
 
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 px-3 py-1 bg-gray-700 rounded-full text-sm text-gray-300">
+                <Wallet size={16} />
+                <span>{formatAddress(address)}</span>
+         
+                <div className="group">
+                 
+                  <button
+                    onClick={() => handleCopy(wallet.account.address)} 
+                    className="ml-2 inline-flex items-center text-xs opacity-100 group-hover:opacity-100 transition-opacity duration-200"
+                  >
+                    {copied ? (
+                      <span className="text-green-400 text-xs">Copied!</span>
+                    ) : (
+                      <Copy size={12} className="text-gray-300 hover:text-white transition-colors" />
+                    )}
+                  </button>
+                </div>
+
+                
+              </div>
             </div>
           </div>
         </div>
@@ -352,7 +547,7 @@ const ChainChat = () => {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((message) => (
-             <ChatMessage key={message.id} message={message} />
+            <ChatMessage key={message.id} message={message} />
           ))}
         </div>
 
@@ -364,13 +559,13 @@ const ChainChat = () => {
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !isTransacting && handleSend()}
+                onKeyDown={(e) => e.key === 'Enter' && !isTransacting && handleSend()}
                 placeholder="Type your message..."
                 disabled={isTransacting}
                 className="flex-1 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 placeholder-gray-500"
               />
               <button
-                onClick={handleSend}
+                onClick={() => {}}
                 disabled={isTransacting}
                 className={`px-6 py-3 rounded-lg flex items-center space-x-2 font-medium transition-all duration-150 ${
                   isTransacting
@@ -384,23 +579,15 @@ const ChainChat = () => {
                     <span>Processing...</span>
                   </>
                 ) : (
-                  <span>Send</span>
+                  <button onClick={() =>handleSend()}>
+                    send
+                  </button>
                 )}
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      {response && (
-        <TransactionModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onConfirm={handleConfirm}
-          response={response}
-          isProcessing={isProcessing}
-        />
-      )}
     </div>
 
   </>

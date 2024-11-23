@@ -168,7 +168,14 @@ const handleTransaction = async (
       console.log("Swap transaction hash:", multiCall.transaction_hash);
       return multiCall;
 
-    } else {
+    } else if (response.result[0].action === "balance") {
+
+
+
+      
+
+    }
+     else {
       throw new Error("Unknown step type in response");
     }
 
@@ -185,7 +192,6 @@ const executeTransaction = async (
   apiResponse: ApiResponse,
   account: any,
   erc20Contract: Contract,
-  chainChatContract: Contract,
   avnuContract: Contract,
   selectedWalletSWO: any
 ) => {
@@ -194,7 +200,6 @@ const executeTransaction = async (
       apiResponse,
       account,
       erc20Contract,
-      chainChatContract,
       avnuContract,
       selectedWalletSWO
     );

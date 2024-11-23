@@ -10,11 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@brian-ai/sdk": "^0.3.4",
     "@cartridge/connector": "^0.3.46",
     "@okxconnect/ui": "^0.3.0-beta.24",
     "@starknet-react/chains": "^3.0.0",
     "@starknet-react/core": "^3.0.1",
     "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
     "get-starknet": "^3.3.3",
     "kit": "^0.1.2",
     "lucide-react": "^0.452.0",
@@ -23,8 +25,10 @@
     "react-hot-toast": "^2.4.1",
     "recharts": "^2.13.0",
     "starknet": "^6.18.0",
+    "starknetid.js": "^4.0.1",
     "starknetkit": "^2.5.0",
-    "starknetkit-latest": "npm:starknetkit@^1.1.9"
+    "starknetkit-latest": "npm:starknetkit@^1.1.9",
+    "unruggable-sdk": "^1.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
