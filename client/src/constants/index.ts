@@ -26,7 +26,7 @@ const NODE_URL =
     ? "https://starknet-mainnet.public.blastapi.io"
     : "https://starknet-sepolia.public.blastapi.io/rpc/v0_7"
 
-const STARKNET_CHAIN_ID =
+export const STARKNET_CHAIN_ID =
   import.meta.env.VITE_PUBLIC_CHAIN_ID === constants.NetworkName.SN_MAIN
     ? constants.StarknetChainId.SN_MAIN
     : constants.StarknetChainId.SN_SEPOLIA

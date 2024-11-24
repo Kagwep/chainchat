@@ -69,13 +69,7 @@ export interface ApiResponse {
   }];
 }
 
-export interface TransactionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => Promise<void>;
-  response: ApiResponse;
-  isProcessing: boolean;
-}
+
 
 
 export interface TransferStep {
@@ -86,3 +80,66 @@ export interface TransferStep {
   };
 }
 
+
+
+
+// Base completion structure
+interface BaseCompletion {
+  action: string;
+  chain: string;
+  amount: string;
+}
+
+// Transfer completion
+interface TransferCompletion extends BaseCompletion {
+  action: 'transfer';
+  token1: string;
+  address: string;
+}
+
+// Swap completion
+interface SwapCompletion extends BaseCompletion {
+  action: 'swap';
+  token1: string;
+  token2: string;
+  address: string;
+}
+
+// Deploy token completion (keeping from previous)
+interface DeployTokenCompletion extends BaseCompletion {
+  action: 'deploytoken';
+  name: string;
+  symbol: string;
+  owner: string;
+  supply: string;
+}
+
+// Response structure
+interface TransactionResponse {
+  result: {
+    prompt: string;
+    completion: [TransferCompletion | SwapCompletion | DeployTokenCompletion];
+  };
+}
+
+// Union type for all possible transaction data types
+
+
+
+
+// Modal props
+interface TransactionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+  response: TransactionResponse;
+  isProcessing: boolean;
+}
+
+export type {
+  TransactionModalProps,
+  TransactionResponse,
+  TransferCompletion,
+  SwapCompletion,
+  DeployTokenCompletion
+};

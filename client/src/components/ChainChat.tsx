@@ -13,7 +13,11 @@ import axios from "axios";
 import { useWallet } from '../contexts/WalletContext';
 import { brian } from '../utils/Generate';
 import { AskRequestBody, ChatRequestBody, ExtractParametersRequestBody,GenerateCodeRequestBody } from '@brian-ai/sdk';
-
+import { createMemecoin, launchOnEkubo } from 'unruggable-sdk';
+import { constants } from "starknet";
+import TokenCategoryDisplay from './TokenCategoryDisplay';
+import StarknetSwap from '../utils/Swap';
+import ResponsiveSidePanel from './ResponsiveSidePanel';
 
 interface Message {
   id: string;
@@ -21,7 +25,10 @@ interface Message {
   text: string;
   timestamp: Date;
   txHash?: string;
+  tokenAddress?: string;
   mode: 'chat' | 'transaction';
+  error?: string;
+
 }
 
 interface TokenBalance {
@@ -186,7 +193,7 @@ const ChainChat = () => {
     {
       id: '1',
       sender: 'agent',
-      text: "👋 Welcome! I'm your Web3 assistant. I can help you with:",
+      text: "👋 Welcome! I'm your your assistant. I can help you with:",
       timestamp: new Date(),
       mode: 'chat'
     },
@@ -217,7 +224,7 @@ const ChainChat = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [response, setResponse] = useState<ApiResponse | null>(null);
+  const [response, setResponse] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [selectedWalletSWO, setSelectedWalletSWO] = useState(null);
   const [mode, setMode] = useState<'chat' | 'transaction'>('transaction');
@@ -230,6 +237,8 @@ const ChainChat = () => {
     connectWallet,
     disconnectWallet
   } = useWallet();
+
+  const starknetSwap = new StarknetSwap(wallet.account);
   
   const handleCopy = async (text: string) => {
     const success = await copyToClipboard(text);
@@ -267,7 +276,7 @@ const ChainChat = () => {
   //   address: AvnuContractAddress,
   // });
 
-  const handleTransactionResponse = (apiResponse: ApiResponse) => {
+  const handleTransactionResponse = (apiResponse: any) => {
     setResponse(apiResponse);
     setIsModalOpen(true);
   };
@@ -289,6 +298,188 @@ const ChainChat = () => {
       setIsProcessing(false);
     }
   };
+
+  const handleConfirmPromptInput = async () => {
+    if (!response) return;
+    
+    setIsProcessing(true);
+    try {
+      const result: any  = await executeTransaction(
+        response,
+        wallet.account,
+        erc20Contract,
+        avnuContract,
+        wallet
+      );
+
+      const newMessage: Message = {
+        id: (messages.length + 3).toString(),
+        text: result.success ? 'success' : 'error',
+        sender: 'agent',
+        timestamp: new Date(),
+        txHash: result,
+        mode: 'transaction'
+      };
+
+      if (result.success) {
+        newMessage.text = 'Transaction submitted successfully';
+        newMessage.txHash = result.transactionHash;
+        
+        if (result.tokenAddress) {
+          newMessage.tokenAddress = result.tokenAddress;
+          newMessage.text += `. Token deployed at ${result.tokenAddress}`;
+        }
+      } else {
+        newMessage.text = result.error || 'Transaction failed. Please try again.';
+        newMessage.error = result.error;
+      }
+    
+      setMessages(prevMessages => [...prevMessages, newMessage as any]);
+
+      setIsModalOpen(false);
+    }catch (error) {
+      const errorMessage: Message = {
+        id: (messages.length + 3).toString(),
+        text: error instanceof Error ? error.message : 'An unexpected error occurred',
+        sender: 'agent',
+        timestamp: new Date(),
+        mode: 'transaction',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    
+      setMessages(prevMessages => [...prevMessages, errorMessage]);
+    }  finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handPromptInput = async () => {
+
+    if (inputText.trim() && !isTransacting) {
+      setIsTransacting(true);
+
+     
+
+      if(mode === 'chat'){
+        try {
+          console.log('User input:', inputText);
+        
+          // Create new message object
+          const newMessage = {
+            id: (messages.length + 1).toString(),
+            text: inputText,
+            sender: 'user' as const,
+            timestamp: new Date(),
+            mode: 'chat' as const
+          };
+        
+          // First update to show user message immediately
+          setMessages(prevMessages => [...prevMessages, newMessage]);
+        
+          // Make API request
+          const response = await brian.ask({
+            prompt: inputText,
+            kb: 'starknet_kb'
+          });
+        
+          // Create response message
+          const agentResponse = {
+            id: (messages.length + 2).toString(), // +2 because we already added user message
+            text: response.answer,
+            sender: 'agent' as const,
+            timestamp: new Date(),
+            mode: 'chat' as const
+          };
+        
+          // Update with both messages
+          setMessages(prevMessages => [...prevMessages, agentResponse]);
+        
+          console.log('API response:', response);
+        
+        } catch (error) {
+          console.error('Error processing message:', error);
+          
+          // Optional: Add error message to chat
+          const errorMessage = {
+            id: (messages.length + 2).toString(),
+            text: 'Sorry, there was an error processing your message. Please try again.',
+            sender: 'agent' as const,
+            timestamp: new Date(),
+            mode: 'chat' as const
+          };
+          
+          setMessages(prevMessages => [...prevMessages, errorMessage]);
+        }
+
+      }else {
+        try {
+          // Prepare request data
+          const requestBody = {
+            prompt: inputText,
+            address: address, // Replace with the actual user wallet address if applicable
+          };
+
+          const newMessage = {
+            id: (messages.length + 1).toString(),
+            text: inputText,
+            sender: 'user',
+            timestamp: new Date(),
+            mode: 'transaction'
+          };
+        
+          setMessages(prevMessages => [...prevMessages, newMessage as any]);
+    
+          // Call API
+          const response = await axios.post(
+            "https://api.brianknows.org/api/v0/agent/parameters-extraction",
+            requestBody,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                "x-brian-api-key": import.meta.env.VITE_BRIAN, // Replace with your actual API key
+              },
+            }
+          );
+  
+          console.log(response.data);
+
+          const newMessage1 = {
+            id: (messages.length + 2).toString(),
+            text: "Processing instructions...",
+            sender: 'agent',
+            timestamp: new Date(),
+            mode: 'transaction'
+          };
+        
+          setMessages(prevMessages => [...prevMessages, newMessage1 as any]);
+
+          handleTransactionResponse(response.data)
+
+
+        } catch (error: any) {
+          console.error("Error occurred during transaction:", error.response?.data || error.message);
+
+        // Optional: Add error message to chat
+        const errorMessage = {
+          id: (messages.length + 2).toString(),
+          text: 'Sorry, there was an error processing your message. Please try again.',
+          sender: 'agent' as const,
+          timestamp: new Date(),
+          mode: 'chat' as const
+        };
+        
+        setMessages(prevMessages => [...prevMessages, errorMessage]);
+
+        }
+      }
+  
+
+  
+      // Reset the input and transaction state
+      setInputText("");
+      setIsTransacting(false);
+    }
+  }
 
 
   const handleSend = async () => {
@@ -331,6 +522,8 @@ const ChainChat = () => {
         
           // Update with both messages
           setMessages(prevMessages => [...prevMessages, agentResponse]);
+
+          
         
           console.log('API response:', response);
         
@@ -456,28 +649,16 @@ const ChainChat = () => {
     <>
 <div className="flex h-screen bg-gray-900">
       {/* Side Panel */}
-      <div 
-        className={`fixed inset-y-0 left-0 transform ${
-          isSidePanelOpen ? 'translate-x-0' : '-translate-x-full'
-        } w-80 bg-gray-850 border-r border-gray-700 transition-transform duration-300 ease-in-out z-50`}
+      <div className="relative">
+      <ResponsiveSidePanel 
+        isSidePanelOpen={isSidePanelOpen} 
+        setIsSidePanelOpen={setIsSidePanelOpen}
       >
-        <div className="p-4 bg-slate-800">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-100">Balances</h2>
-            <button 
-              onClick={() => setIsSidePanelOpen(false)}
-              className="text-gray-400 hover:text-gray-200"
-            >
-              <X size={24} />
-            </button>
-          </div>
-          <div className="space-y-3">
-            {tokenBalances.map((token) => (
-              <TokenBalance key={token.symbol} {...token} />
-            ))}
-          </div>
-        </div>
-      </div>
+        <TokenCategoryDisplay />
+      </ResponsiveSidePanel>
+      
+      {/* Add a button to open the panel on mobile */}
+    </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
@@ -559,7 +740,7 @@ const ChainChat = () => {
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !isTransacting && handleSend()}
+                onKeyDown={(e) => e.key === 'Enter' && !isTransacting && handPromptInput()}
                 placeholder="Type your message..."
                 disabled={isTransacting}
                 className="flex-1 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 placeholder-gray-500"
@@ -579,7 +760,7 @@ const ChainChat = () => {
                     <span>Processing...</span>
                   </>
                 ) : (
-                  <button onClick={() =>handleSend()}>
+                  <button onClick={() => handPromptInput()}>
                     send
                   </button>
                 )}
@@ -589,7 +770,15 @@ const ChainChat = () => {
         </div>
       </div>
     </div>
-
+    {response && (
+        <TransactionModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onConfirm={handleConfirmPromptInput}
+          response={response}
+          isProcessing={isProcessing}
+        />
+      )}
   </>
   );
 };

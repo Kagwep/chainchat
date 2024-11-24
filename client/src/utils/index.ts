@@ -1,3 +1,7 @@
+import tokensAllJson from "./tokens.json";
+
+export const tokensAll = tokensAllJson;
+
 export const shortenAddress = (addr: string | undefined): string => {
     if (!addr) return '';
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -9,6 +13,17 @@ export interface BigDecimal {
   value: bigint;
   decimals: number;
 }
+
+export type Token = {
+  name: string;
+  address: string;
+  symbol: string;
+  decimals: number;
+  logoUri: string;
+  lastDailyVolumeUsd: number;
+  extensions: Record<string, any>;
+  tags: string[];
+};
 
 export const parseUnits = (value: string, decimals: number): BigDecimal => {
   let [integer, fraction = ""] = value.split(".");
@@ -45,3 +60,14 @@ export const getUint256CalldataFromBN = (bn: num.BigNumberish) => uint256.bnToUi
 
 export const parseInputAmountToUint256 = (input: string, decimals: number = 18) =>
   getUint256CalldataFromBN(parseUnits(input, decimals).value);
+
+
+const normalizeSymbol = (symbol: string): string => {
+  return symbol.trim().toUpperCase();
+};
+
+// Helper function to find token by symbol
+export const findTokenBySymbol = (symbol: string, tokens: Token[]): Token | undefined => {
+  const normalizedSymbol = normalizeSymbol(symbol);
+  return tokens.find(token => normalizeSymbol(token.symbol) === normalizedSymbol);
+};
