@@ -1,4 +1,4 @@
-import tokensAllJson from "./tokens.json";
+import tokensAllJson from "../assets/tokens.json";
 
 export const tokensAll = tokensAllJson;
 
