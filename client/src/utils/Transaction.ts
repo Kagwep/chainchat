@@ -7,7 +7,8 @@ import { findTokenBySymbol, parseInputAmountToUint256, tokensAll } from '.';
 import StarknetSwap from './Swap';
 import Erc20Abi from '../abi/ERC20.json'
 import { createMemecoin } from 'unruggable-sdk';
-
+import { StarknetIdNavigator } from "starknetid.js";
+import { Provider, constants } from "starknet";
 
 export interface ResponseData {
   result: {
@@ -22,6 +23,12 @@ export interface TransactionResult {
   tokenAddress?: string;
   error?: string;
 }
+
+const providerId = new Provider();
+const starknetIdNavigator = new StarknetIdNavigator(
+  provider,
+  constants.StarknetChainId.SN_MAIN
+);
 
 type Steps = TransferStep[] | [SwapSteps['approve'], SwapSteps['transactionData']];
 
@@ -110,9 +117,31 @@ const isTransferSteps = (steps: Steps): steps is TransferStep[] => {
             chainId: use_chain || 'SN_MAIN', // Default to mainnet if not specified
           };
 
+          if (!transferParams.toAddress) {
+            toast.error("Please provide recipient");
+            return false;
+          }
+
+
+
           if (!transferParams.fromAddress) {
             toast.error("Please connect your wallet");
             return false;
+          }
+
+                    // Check if address is a Starknet ID
+          if (transferParams.toAddress.endsWith('.stark')) {
+            try {
+              const resolvedAddress = await starknetIdNavigator.getAddressFromStarkName(transferParams.toAddress);
+              if (!resolvedAddress) {
+                toast.error("Could not resolve Starknet ID");
+                return false;
+              }
+              transferParams.toAddress = resolvedAddress;
+            } catch (error) {
+              toast.error("Error resolving Starknet ID");
+              return false;
+            }
           }
 
           const toTransfer = findTokenBySymbol(transferParams.tokenSymbol,tokensAll);
