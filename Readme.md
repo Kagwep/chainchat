@@ -31,7 +31,7 @@ Chain Chat simplifies blockchain interactions by allowing users to perform trans
 
 ### Getting Started
 1. Open Telegram
-2. Search for Chain Chat
+2. Search for [@chainchatbot](https://t.me/chainchatbot)
 3. Start the bot
 4. Connect your Argent Web Wallet
 5. Begin chatting and transacting!
