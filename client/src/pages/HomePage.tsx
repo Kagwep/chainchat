@@ -7,6 +7,7 @@ import { useAccount, useConnect } from '@starknet-react/core';
 import { useWallet } from '../contexts/WalletContext';
 import WalletConnect from '../components/WalletConnect';
 
+
 interface WalletInfo {
   address: string;
   network: string;
@@ -46,14 +47,17 @@ const HomePage = () => {
           <WalletConnect />
   
           <div className="pt-4 text-sm text-gray-400">
-            <p>Currently Supported:</p>
-            <div className="flex justify-center space-x-4 mt-2">
-              <div className="flex items-center space-x-2 px-3 py-1 bg-gray-700 rounded-full">
-                <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                <span>Starknet</span>
-              </div>
+          <p>Currently Supported:</p>
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center space-x-2 px-3 py-1 bg-gray-700 rounded-full">
+              <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+              <span>Starknet</span>
             </div>
+            <span className="text-orange-500">
+              Using Telegram Mini? Use Web Wallet during wallet selection
+            </span>
           </div>
+        </div>
         </div>
       </div>
     );
