@@ -12,13 +12,17 @@ const CommandExamples = () => {
       description: "Send tokens"
     },
     {
-      text: "swap 10 strk to Brother",
+      text: "swap 10 strk for Brother",
       description: "Swap tokens"
     },
     {
       text: "Deploy a meme coin named InfinityPaws, symbol PAWS, with an initial supply of 10,000,000,000",
       description: "Deploy tokens"
-    }
+    },
+    {
+        text: "whats my STRK balance",
+        description: "Deploy tokens"
+      }
   ];
 
   if (!isVisible) return null;

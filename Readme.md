@@ -26,8 +26,9 @@ Chain Chat simplifies blockchain interactions by allowing users to perform trans
 
 ### Natural Language Commands
 - Send tokens: "send 1000 Brother to bigbrother.stark" or "send 1000 Brother to 0x073d9ec35df6165a9f3d499a5ccc5dfdff9f4df868c45b2f489247084833e8c3"
-- Swap tokens: "swap 10 strk to Brother"
+- Swap tokens: "swap 10 strk for Brother"
 - Deploy tokens: "Deploy a meme coin named InfinityPaws, symbol $PAWS, with an initial supply of 10,000,000,000"
+- Balance : whats my STRK balance
 
 ### Getting Started
 1. Open Telegram
