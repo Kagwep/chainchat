@@ -21,6 +21,7 @@ export interface TransactionResult {
   success: boolean;
   transactionHash?: string;
   tokenAddress?: string;
+  balance?:string
   error?: string;
 }
 
@@ -86,6 +87,15 @@ const isTransferSteps = (steps: Steps): steps is TransferStep[] => {
     } else {
       console.log("No completion data found in response.");
     }
+  }
+
+  function formatBalance(balance: bigint, decimals: number): string {
+    const balanceStr = balance.toString();
+    const integerPart = balanceStr.slice(0, -decimals) || '0';
+    const decimalPart = balanceStr.slice(-decimals).padStart(decimals, '0');
+    
+    // Remove trailing zeros and decimal point if needed
+    return `${integerPart}.${decimalPart}`.replace(/\.?0+$/, '');
   }
 
   const handleTransaction = async (
@@ -208,6 +218,87 @@ const isTransferSteps = (steps: Steps): steps is TransferStep[] => {
         
           
           console.log('Executing transfer with params:', transferParams);
+
+          // You can add more logic to handle transfer-specific operations
+          break;
+
+        case 'balance':
+
+
+          const { token1: token_check, } = completion;
+          
+
+
+
+
+          if (!token_check || token_check === '') {
+            toast.error("Please provide token to check");
+            return false;
+          }
+
+          const toCheckBalance = findTokenBySymbol(token_check,tokensAll);
+
+          if (!toCheckBalance) {
+            toast.error("Invalid token");
+            return false;
+          }
+
+
+          const toastIdp2 = toast.loading("Transaction pending...");
+
+          try {
+
+            const erc20Contract = new Contract(
+              Erc20Abi as any,
+              toCheckBalance.address,
+              wallet.account as any,
+            )
+
+            // You'll need to modify your StarknetSwap class to handle dynamic token pairs
+            const balance = await erc20Contract.balance_of(
+              wallet.account.address
+            );
+
+             const readableBalance =  formatBalance(balance, toCheckBalance.decimals)
+
+             const transactionHash = '0x0'
+
+             console.log(readableBalance)
+
+                        // Dismiss the loading toast
+            toast.dismiss(toastIdp2);
+            
+            // Show success toast
+            toast.success(`Transaction submitted!`, {
+              duration: 5000,
+              position: "top-right",
+            });
+
+            return {
+              success: true,
+              transactionHash: transactionHash,
+              balance: readableBalance
+            };
+            
+          } catch (error) {
+                          // Dismiss the loading toast
+              // toast.dismiss(toastIdp2);
+              // const errorMessage = error instanceof Error ? error.message : "Transaction failed";
+              // // Show error toast
+              // toast.error(error instanceof Error ? error.message : "Transaction failed", {
+              //   duration: 5000,
+              //   position: "top-right",
+              // });
+  
+              // return {
+              //   success: false,
+              //   error: errorMessage
+              // };
+              console.log(error)
+          } 
+        
+          
+         // console.log('Executing transfer with params:', transferParams);
 
           // You can add more logic to handle transfer-specific operations
           break;

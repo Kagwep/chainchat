@@ -330,6 +330,10 @@ const ChainChat = () => {
           newMessage.tokenAddress = result.tokenAddress;
           newMessage.text += `. Token deployed at ${result.tokenAddress}`;
         }
+
+        if (result.balance){
+          newMessage.text = `Your balance is ${result.balance}`;
+        }
       } else {
         newMessage.text = result.error || 'Transaction failed. Please try again.';
         newMessage.error = result.error;

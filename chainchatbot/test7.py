@@ -3,11 +3,11 @@ import json
 
 # Set the API URL and your API key
 url = "https://api.brianknows.org/api/v0/agent/parameters-extraction"
-api_key = ""  # Replace with your actual API key
+api_key = "brian_RiqOWaYf4THRhzgLe"  # Replace with your actual API key
 
 # Prepare the data to send in the POST request
 data = {
-    "prompt": "Deploy a meme coin named InfinityPaws, symbol PAWS, with an initial supply of 10,000,000,000"
+    "prompt": "what is my BROTHER balance"
 }
 
 # Set the headers

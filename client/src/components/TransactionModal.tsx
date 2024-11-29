@@ -188,6 +188,15 @@ const TokenAmount = ({
             </DetailRow>
           </div>
         );
+
+        case 'balance':
+          return (
+            <div className="divide-y divide-gray-100">
+            <DetailRow label="Token">
+              <TokenDisplay symbol={completion.token1} tokens={tokens} />
+            </DetailRow>
+            </div>
+          );
   
       default:
         return null;
