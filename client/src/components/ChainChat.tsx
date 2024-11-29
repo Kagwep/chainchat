@@ -1,6 +1,6 @@
 "use client"
 
-import { Send, Bot, User, DollarSign, Menu, X, Wallet, Copy, Loader2, ExternalLink, Coins } from 'lucide-react';
+import { Send, Bot, User, DollarSign, Menu, X, Wallet, Copy, Loader2, ExternalLink, Coins, LogOut } from 'lucide-react';
 import React, { useState } from 'react';
 import { ApiResponse,  WalletInfo } from '../types';
 import { useAccount, useConnect, useContract, useDisconnect } from '@starknet-react/core';
@@ -18,6 +18,7 @@ import { constants } from "starknet";
 import TokenCategoryDisplay from './TokenCategoryDisplay';
 import StarknetSwap from '../utils/Swap';
 import ResponsiveSidePanel from './ResponsiveSidePanel';
+import CommandGuide from './CommandGuide';
 
 interface Message {
   id: string;
@@ -200,14 +201,14 @@ const ChainChat = () => {
     {
       id: '2',
       sender: 'agent',
-      text: "💬 Chat Mode:\n• Get blockchain information\n• Check token prices\n• Learn about DeFi protocols",
+      text: "💰 Transaction Mode:\n• Send tokens\n• Swap tokens\n• Approve contracts\n• Deploy unruggable meme coins",
       timestamp: new Date(),
       mode: 'chat'
     },
     {
       id: '3',
       sender: 'agent',
-      text: "💰 Transaction Mode:\n• Send tokens\n• Swap tokens\n• Approve contracts\n• Deploy contracts",
+      text: "💬 Chat Mode:\n• Get blockchain information\n• Check token prices\n• Learn about DeFi protocols",
       timestamp: new Date(),
       mode: 'chat'
     },
@@ -647,80 +648,84 @@ const ChainChat = () => {
 
   return (
     <>
-<div className="flex h-screen bg-gray-900">
+ <div className="flex h-screen bg-gray-900">
       {/* Side Panel */}
       <div className="relative">
-      <ResponsiveSidePanel 
-        isSidePanelOpen={isSidePanelOpen} 
-        setIsSidePanelOpen={setIsSidePanelOpen}
-      >
-        <TokenCategoryDisplay />
-      </ResponsiveSidePanel>
-      
-      {/* Add a button to open the panel on mobile */}
-    </div>
+        <ResponsiveSidePanel 
+          isSidePanelOpen={isSidePanelOpen} 
+          setIsSidePanelOpen={setIsSidePanelOpen}
+        >
+          <TokenCategoryDisplay />
+        </ResponsiveSidePanel>
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-gray-800 border-b border-gray-700 p-4">
-          <div className="flex items-center justify-between max-w-6xl mx-auto w-full">
-            <div className="flex items-center space-x-4">
+        {/* Header - Restructured for mobile */}
+        <div className="bg-gray-800 border-b border-gray-700 p-2 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between max-w-6xl mx-auto w-full gap-2 sm:gap-4">
+            {/* Top row on mobile - Menu and Wallet */}
+            <div className="flex items-center justify-between">
               <button
                 onClick={() => setIsSidePanelOpen(true)}
-                className="text-gray-400 hover:text-gray-200"
+                className="text-gray-400 hover:text-gray-200 p-2"
               >
                 <Menu size={24} />
               </button>
               
-              {/* Mode Switch */}
-              <div className="hidden sm:flex rounded-lg overflow-hidden border border-gray-700">
-                <button
-                  onClick={() => setMode('chat')}
-                  className={`px-4 py-2 flex items-center gap-2 text-sm ${
-                    mode === 'chat' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                  }`}
-                >
-                  <User size={16} />
-                  <span>Chat</span>
-                </button>
-                <button
-                  onClick={() => setMode('transaction')}
-                  className={`px-4 py-2 flex items-center gap-2 text-sm ${
-                    mode === 'transaction' 
-                      ? 'bg-purple-600 text-white' 
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                  }`}
-                >
-                  <DollarSign size={16} />
-                  <span>Transaction</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-2 px-3 py-1 bg-gray-700 rounded-full text-sm text-gray-300">
-                <Wallet size={16} />
-                <span>{formatAddress(address)}</span>
-         
-                <div className="group">
-                 
+              <div className="flex items-center gap-2">
+                {/* Wallet Address */}
+                <div className="flex items-center px-2 py-1 sm:px-3 sm:py-1 bg-gray-700 rounded-full text-xs sm:text-sm text-gray-300">
+                  <Wallet size={16} className="mr-2" />
+                  <span className="hidden xs:inline">{formatAddress(address)}</span>
+                  <span className="xs:hidden">{formatAddress(address).slice(0, 8)}...</span>
                   <button
                     onClick={() => handleCopy(wallet.account.address)} 
-                    className="ml-2 inline-flex items-center text-xs opacity-100 group-hover:opacity-100 transition-opacity duration-200"
+                    className="ml-2 p-1"
                   >
                     {copied ? (
-                      <span className="text-green-400 text-xs">Copied!</span>
+                      <span className="text-green-400 text-xs">✓</span>
                     ) : (
                       <Copy size={12} className="text-gray-300 hover:text-white transition-colors" />
                     )}
                   </button>
                 </div>
 
-                
+                {/* Disconnect Button */}
+                <button
+                  onClick={disconnectWallet}
+                  className="flex items-center px-2 py-1 sm:px-3 sm:py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full transition-colors"
+                >
+                  <LogOut size={16} />
+                  <span className="hidden sm:ml-2 sm:inline text-xs sm:text-sm">Disconnect</span>
+                </button>
               </div>
+            </div>
+
+            {/* Mode Switch - Full width on mobile */}
+            <div className="flex rounded-lg overflow-hidden border border-gray-700 w-full sm:w-auto">
+              <button
+                onClick={() => setMode('chat')}
+                className={`flex-1 sm:flex-none px-4 py-2 flex items-center justify-center gap-2 text-sm ${
+                  mode === 'chat' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                }`}
+              >
+                <User size={16} />
+                <span>Chat</span>
+              </button>
+              <button
+                onClick={() => setMode('transaction')}
+                className={`flex-1 sm:flex-none px-4 py-2 flex items-center justify-center gap-2 text-sm ${
+                  mode === 'transaction' 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                }`}
+              >
+                <DollarSign size={16} />
+                <span>Transaction</span>
+              </button>
             </div>
           </div>
         </div>
@@ -731,11 +736,12 @@ const ChainChat = () => {
             <ChatMessage key={message.id} message={message} />
           ))}
         </div>
+        <CommandGuide />
 
-        {/* Input */}
-        <div className="border-t border-gray-700 p-4 bg-gray-800">
+        {/* Input Section - Restructured for mobile */}
+        <div className="border-t border-gray-700 p-2 sm:p-4 bg-gray-800">
           <div className="max-w-6xl mx-auto">
-            <div className="flex space-x-4">
+            <div className="flex gap-2 sm:gap-4">
               <input
                 type="text"
                 value={inputText}
@@ -743,12 +749,12 @@ const ChainChat = () => {
                 onKeyDown={(e) => e.key === 'Enter' && !isTransacting && handPromptInput()}
                 placeholder="Type your message..."
                 disabled={isTransacting}
-                className="flex-1 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 placeholder-gray-500"
+                className="flex-1 bg-gray-900 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 sm:px-4 sm:py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 placeholder-gray-500 text-sm sm:text-base"
               />
               <button
-                onClick={() => {}}
+                onClick={handPromptInput}
                 disabled={isTransacting}
-                className={`px-6 py-3 rounded-lg flex items-center space-x-2 font-medium transition-all duration-150 ${
+                className={`px-3 py-2 sm:px-6 sm:py-3 rounded-lg flex items-center gap-2 font-medium transition-all duration-150 ${
                   isTransacting
                     ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
@@ -757,12 +763,13 @@ const ChainChat = () => {
                 {isTransacting ? (
                   <>
                     <Loader2 className="animate-spin" size={16} />
-                    <span>Processing...</span>
+                    <span className="hidden sm:inline">Processing...</span>
                   </>
                 ) : (
-                  <button onClick={() => handPromptInput()}>
-                    send
-                  </button>
+                  <>
+                    <Send size={16} />
+                    <span className="hidden sm:inline">Send</span>
+                  </>
                 )}
               </button>
             </div>

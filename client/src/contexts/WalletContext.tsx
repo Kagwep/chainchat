@@ -1,15 +1,21 @@
 "use client"
 
-// WalletContext.tsx
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { connect, disconnect } from "starknetkit-latest"
 import { ARGENT_WEBWALLET_URL, CHAIN_ID, provider } from '../constants';
+
+// Add platform detection types
+interface PlatformInfo {
+  isMobile: boolean;
+  isTelegramMini: boolean;
+}
 
 interface WalletContextType {
   wallet: any;
   address: string;
   isConnecting: boolean;
   error: string;
+  platformInfo: PlatformInfo;
   connectWallet: (useWebWallet?: boolean) => Promise<void>;
   disconnectWallet: () => Promise<void>;
 }
@@ -21,68 +27,76 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [address, setAddress] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState('');
+  const [platformInfo, setPlatformInfo] = useState<PlatformInfo>({
+    isMobile: false,
+    isTelegramMini: false
+  });
 
-  // Auto-connect on startup
-  // useEffect(() => {
-  //   const autoConnect = async () => {
-  //     try {
-  //       const { wallet: connectedWallet } = await connect({
-  //         provider,
-  //         modalMode: "neverAsk",
-  //         webWalletUrl: ARGENT_WEBWALLET_URL,
-  //         argentMobileOptions: {
-  //           dappName: "Chain Chat",
-  //           url: window.location.hostname,
-  //           chainId: CHAIN_ID,
-  //           icons: [],
-  //         },
-  //       });
-        
-  //       if (connectedWallet) {
-  //         setWallet(connectedWallet);
-  //         setAddress(connectedWallet.account.address);
-  //       }
-  //     } catch (err) {
-  //       console.error('Auto-connect failed:', err);
-  //     }
-  //   };
+  // Platform detection on mount
+  useEffect(() => {
+    const detectPlatform = () => {
+      // Check if running in mobile browser
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      // Check if running in Telegram Mini App
+      const isTelegramMini = Boolean(
+        typeof window !== 'undefined' && 
+        window.Telegram && 
+        (window.Telegram as any).WebApp
+      );
+      
+      setPlatformInfo({
+        isMobile,
+        isTelegramMini
+      });
+    };
 
-  //   autoConnect();
-  // }, []);
+    detectPlatform();
+  }, []);
 
   const connectWallet = useCallback(async (useWebWallet = false) => {
     setIsConnecting(true);
     setError('');
-
-
-  
     
     try {
-      const { wallet: connectedWallet } = await connect({
+      // For Telegram Mini app, force web wallet
+      const shouldUseWebWallet = useWebWallet || platformInfo.isTelegramMini;
+      
+      const connectOptions = {
         provider,
-        modalMode: "alwaysAsk",
+        modalMode: shouldUseWebWallet ? "neverAsk" : "alwaysAsk",
         webWalletUrl: ARGENT_WEBWALLET_URL,
-        argentMobileOptions: {
-          dappName: "Your dApp Name",
-          url: window.location.hostname,
-          chainId: CHAIN_ID,
-          icons: [],
-        },
-      });
+        // Only include mobile options if not using web wallet
+        ...((!shouldUseWebWallet) && {
+          argentMobileOptions: {
+            dappName: "ChainChat",
+            url: window.location.hostname,
+            chainId: CHAIN_ID,
+            icons: [],
+          }
+        })
+      };
 
+      // If using web wallet, connect directly to it
+      if (shouldUseWebWallet) {
+        window.open(ARGENT_WEBWALLET_URL, '_blank');
+        return;
+      }
+
+      const { wallet: connectedWallet } = await connect(connectOptions as any);
 
       if (connectedWallet) {
-        console.log(connectedWallet)
+        console.log('Connected wallet:', connectedWallet);
         setWallet(connectedWallet);
         setAddress(connectedWallet.account.address);
       }
     } catch (err) {
       setError('Failed to connect wallet');
-      console.error(err);
+      console.error('Wallet connection error:', err);
     } finally {
       setIsConnecting(false);
     }
-  }, []);
+  }, [platformInfo]);
 
   const disconnectWallet = useCallback(async () => {
     try {
@@ -91,7 +105,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       setAddress('');
     } catch (err) {
       setError('Failed to disconnect wallet');
-      console.error(err);
+      console.error('Wallet disconnect error:', err);
     }
   }, []);
 
@@ -100,6 +114,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     address,
     isConnecting,
     error,
+    platformInfo,
     connectWallet,
     disconnectWallet,
   };

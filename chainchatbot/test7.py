@@ -7,7 +7,7 @@ api_key = ""  # Replace with your actual API key
 
 # Prepare the data to send in the POST request
 data = {
-    "prompt": "send 10000 brother to kagwe.stark"
+    "prompt": "Deploy a meme coin named InfinityPaws, symbol PAWS, with an initial supply of 10,000,000,000"
 }
 
 # Set the headers
