@@ -141,11 +141,11 @@ const TokenCategoryDisplay = () => {
               </a>
             </div>
             
-            {token.lastDailyVolumeUsd > 0 && (
+            {/* {token.lastDailyVolumeUsd > 0 && (
               <div className="text-xs text-gray-400">
                 24h: ${token.lastDailyVolumeUsd.toLocaleString()}
               </div>
-            )}
+            )} */}
           </div>
         </div>
 
