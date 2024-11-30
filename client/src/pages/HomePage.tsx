@@ -39,9 +39,6 @@ const HomePage = () => {
             <div className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
               <h1 className="text-4xl font-bold">ChainChat</h1>
             </div>
-            <p className="text-gray-400">
-              Decentralized messaging powered by Starknet
-            </p>
           </div>
   
           <WalletConnect />
