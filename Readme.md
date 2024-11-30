@@ -1,6 +1,6 @@
 # Chain Chat
 
-Chain Chat is a Telegram mini app that makes Web3 interactions as simple as sending a message. Powered by Brian API on Starknet, it enables users to execute blockchain transactions through natural language commands.
+Chain Chat is a Telegram mini app that makes some interactions on starknet as simple as sending a message. Powered by Brian API on Starknet, it enables users to execute  transactions through natural language commands.
 
 ![home](https://res.cloudinary.com/dydj8hnhz/image/upload/v1732889722/amqvvpzkxtpmbhnbnglr.png "")
 
