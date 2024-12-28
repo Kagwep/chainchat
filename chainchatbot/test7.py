@@ -3,11 +3,11 @@ import json
 
 # Set the API URL and your API key
 url = "https://api.brianknows.org/api/v0/agent/parameters-extraction"
-api_key = "brian_RiqOWaYf4THRhzgLe"  # Replace with your actual API key
+api_key = ""  # Replace with your actual API key
 
 # Prepare the data to send in the POST request
 data = {
-    "prompt": "what is my BROTHER balance"
+    "prompt": "bridge 100 usdt from arbitrum"
 }
 
 # Set the headers

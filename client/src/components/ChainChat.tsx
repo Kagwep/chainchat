@@ -3,22 +3,27 @@
 import { Send, Bot, User, DollarSign, Menu, X, Wallet, Copy, Loader2, ExternalLink, Coins, LogOut } from 'lucide-react';
 import React, { useState } from 'react';
 import { ApiResponse,  WalletInfo } from '../types';
-import { useAccount, useConnect, useContract, useDisconnect } from '@starknet-react/core';
+import { useAccount, useConnect, useContract, useDisconnect, useSendTransaction } from '@starknet-react/core';
 import { executeTransaction } from '../utils/Transaction';
 import TransactionModal from './TransactionModal';
-import { ETHTokenAddress, ChainChatContractAddress, ChainChatAbi, AvnuContractAddress, AvnuChatAbi } from '../constants';
+import { ETHTokenAddress,  AvnuContractAddress, AvnuChatAbi, provider, STARKNET_CHAIN_ID } from '../constants';
 import Erc20Abi from '../abi/ERC20.json'
 import { Abi, Contract } from 'starknet';
 import axios from "axios";
-import { useWallet } from '../contexts/WalletContext';
 import { brian } from '../utils/Generate';
 import { AskRequestBody, ChatRequestBody, ExtractParametersRequestBody,GenerateCodeRequestBody } from '@brian-ai/sdk';
-import { createMemecoin, launchOnEkubo } from 'unruggable-sdk';
+import { launchOnEkubo } from 'unruggable-sdk';
 import { constants } from "starknet";
 import TokenCategoryDisplay from './TokenCategoryDisplay';
 import StarknetSwap from '../utils/Swap';
 import ResponsiveSidePanel from './ResponsiveSidePanel';
 import CommandGuide from './CommandGuide';
+import { useGlobalContext } from '../provider/GlobalContext';
+import { measureMemory } from 'vm';
+import toast from 'react-hot-toast';
+import { StarknetIdNavigator } from 'starknetid.js';
+import { findTokenBySymbol, parseInputAmountToUint256, tokensAll } from '../utils';
+import { createMemecoin } from '../services/unraggable';
 
 interface Message {
   id: string;
@@ -94,6 +99,8 @@ const TokenBalance = ({ symbol, balance, value, change }: TokenBalance) => (
 // Enhanced Message component to handle address formatting
 const ChatMessage = ({ message }: { message: Message }) => {
   const [copied, setCopied] = useState(false);
+
+
   
   const handleCopy = async (text: string) => {
     const success = await copyToClipboard(text);
@@ -162,14 +169,14 @@ const ChatMessage = ({ message }: { message: Message }) => {
                 hour: '2-digit',
                 minute: '2-digit'
               })}</span>
-              {message.txHash && (
+              {message.txHash && message.error === undefined &&  (
               <a 
               href={`https://starkscan.co/tx/${message.txHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center space-x-1 hover:text-blue-300 transition-colors duration-150"
             >
-              <span>Tx: {message.txHash.slice(0, 6)}...{message.txHash.slice(-4)}</span>
+              <span>Tx: {message.txHash?.slice(0, 6)}...{message.txHash.slice(-4)}</span>
               <ExternalLink size={12} />
             </a>
             )}
@@ -229,17 +236,23 @@ const ChainChat = () => {
   const [copied, setCopied] = useState(false);
   const [selectedWalletSWO, setSelectedWalletSWO] = useState(null);
   const [mode, setMode] = useState<'chat' | 'transaction'>('transaction');
+  const [amount, setAmount] = useState();
+  const { account, address } = useGlobalContext();
+  const { disconnect, error } = useDisconnect({});
+    const starknetIdNavigator = new StarknetIdNavigator(
+      provider,
+      constants.StarknetChainId.SN_MAIN
+    );
 
-  const {
-    wallet,
-    address,
-    isConnecting,
-    error,
-    connectWallet,
-    disconnectWallet
-  } = useWallet();
+    const validTokens = tokensAll.map(token => ({
+      ...token,
+      logoUri: token.logoUri || '' // Convert null to empty string
+    }));
+    const [currentTokenAddress, setCurrentTokenAddress] = useState<string | null>(null);
 
-  const starknetSwap = new StarknetSwap(wallet.account);
+
+
+
   
   const handleCopy = async (text: string) => {
     const success = await copyToClipboard(text);
@@ -255,16 +268,30 @@ const ChainChat = () => {
   // });
 
 
+  const { contract } = useContract({
+    abi: Erc20Abi as Abi,
+    address: currentTokenAddress as `0x${string}` || '0x' as `0x${string}`, 
+  })
+
+  const { sendAsync } = useSendTransaction({
+    calls: undefined  // This is required even if undefined initially
+  });
+
+  const starknetSwap = new StarknetSwap(account!, sendAsync);
+
   const erc20Contract = new Contract(
     Erc20Abi as any,
     ETHTokenAddress,
-    wallet.account as any,
+    account as any,
   )
+
+
+
 
   const avnuContract = new Contract(
     AvnuChatAbi as any,
     AvnuContractAddress,
-    wallet.account as any,
+     account as any,
   )
 
   // const { contract: chainChatContract } = useContract({
@@ -283,21 +310,400 @@ const ChainChat = () => {
   };
 
   const handleConfirm = async () => {
+
     if (!response) return;
+
+      if (response.result.completion && response.result.completion.length > 0) {
+        const action = response.result.completion[0].action;
+        const completion = response.result.completion[0];
     
-    setIsProcessing(true);
-    try {
-      await executeTransaction(
-        response,
-        wallet.account,
-        erc20Contract,
-        avnuContract,
-        wallet
-      );
-      setIsModalOpen(false);
-    } finally {
-      setIsProcessing(false);
-    }
+        // Check for the action and handle different cases using a switch statement
+        switch (action) {
+          case 'transfer':
+  
+  
+            const { token1: token, address, amount: token_amount, chain: use_chain } = completion;
+            
+            const transferParams = {
+              tokenSymbol: token,
+              toAddress: address,
+              token_amount,
+              fromAddress: account?.address,
+              chainId: use_chain || 'SN_MAIN', // Default to mainnet if not specified
+            };
+  
+            if (!transferParams.toAddress) {
+              toast.error("Please provide recipient");
+              return false;
+            }
+  
+  
+  
+            if (!transferParams.fromAddress) {
+              toast.error("Please connect your wallet");
+              return false;
+            }
+  
+                      // Check if address is a Starknet ID
+            if (transferParams.toAddress.endsWith('.stark')) {
+              try {
+                const resolvedAddress = await starknetIdNavigator.getAddressFromStarkName(transferParams.toAddress);
+                if (!resolvedAddress) {
+                  toast.error("Could not resolve Starknet ID");
+                  return false;
+                }
+                transferParams.toAddress = resolvedAddress;
+              } catch (error) {
+                toast.error("Error resolving Starknet ID");
+                return false;
+              }
+            }
+  
+            const toTransfer = findTokenBySymbol(transferParams.tokenSymbol,validTokens);
+  
+            if (!toTransfer) {
+              toast.error("Invalid token");
+              return false;
+            }
+  
+            // Handle decimal amount
+            const tamount = parseFloat(transferParams.token_amount);
+            if (isNaN(tamount) || tamount <= 0) {
+              toast.error("Please enter a valid amount");
+              return false;
+            }
+
+            setCurrentTokenAddress(toTransfer.address);
+  
+            const toastIdp = toast.loading("Transaction pending...");
+  
+            try {
+  
+              const calls = [
+                {
+                  contractAddress: toTransfer.address,
+                  entrypoint: "transfer",
+                  calldata: [
+                    transferParams.toAddress,
+                    parseInputAmountToUint256(transferParams.token_amount).low,
+                    parseInputAmountToUint256(transferParams.token_amount).high
+                  ]
+                }
+              ];
+  
+              
+              const result = await sendAsync(calls);
+        
+              toast.dismiss(toastIdp);
+              toast.success(`Transaction submitted!`);
+  
+              console.log(result)
+
+              return {
+                success: true,
+                transactionHash: result.transaction_hash
+              };
+  
+  
+              
+                          // Dismiss the loading toast
+              // toast.dismiss(toastIdp);
+              
+              // // Show success toast
+              // toast.success(`Transaction submitted!`, {
+              //   duration: 5000,
+              //   position: "top-right",
+              // });
+  
+              // return {
+              //   success: true,
+              //   transactionHash: transactionHash.transaction_hash
+              // };
+              
+            } catch (error) {
+                            // Dismiss the loading toast
+                toast.dismiss(toastIdp);
+                const errorMessage = error instanceof Error ? error.message : "Transaction failed";
+                // Show error toast
+                toast.error(error instanceof Error ? error.message : "Transaction failed", {
+                  duration: 5000,
+                  position: "top-right",
+                });
+    
+                return {
+                  success: false,
+                  error: errorMessage
+                };
+            } 
+          
+            
+            console.log('Executing transfer with params:', transferParams);
+  
+            // You can add more logic to handle transfer-specific operations
+            break;
+  
+          case 'balance':
+  
+  
+            const { token1: token_check, } = completion;
+            
+  
+  
+  
+  
+            if (!token_check || token_check === '') {
+              toast.error("Please provide token to check");
+              return false;
+            }
+  
+            const toCheckBalance = findTokenBySymbol(token_check,validTokens);
+  
+            if (!toCheckBalance) {
+              toast.error("Invalid token");
+              return false;
+            }
+  
+  
+            const toastIdp2 = toast.loading("Transaction pending...");
+  
+            try {
+  
+              const erc20Contract = new Contract(
+                Erc20Abi as any,
+                toCheckBalance.address,
+                account as any,
+              )
+  
+              // You'll need to modify your StarknetSwap class to handle dynamic token pairs
+              const balance = await erc20Contract.balance_of(
+                account?.address
+              );
+  
+               const readableBalance =  formatBalance(balance, toCheckBalance.decimals)
+  
+               const transactionHash = '0x0'
+  
+               console.log(readableBalance)
+  
+                          // Dismiss the loading toast
+              toast.dismiss(toastIdp2);
+              
+              // Show success toast
+              toast.success(`Transaction submitted!`, {
+                duration: 5000,
+                position: "top-right",
+              });
+  
+              return {
+                success: true,
+                transactionHash: transactionHash,
+                balance: readableBalance
+              };
+              
+            } catch (error) {
+                            // Dismiss the loading toast
+                // toast.dismiss(toastIdp2);
+                // const errorMessage = error instanceof Error ? error.message : "Transaction failed";
+                // // Show error toast
+                // toast.error(error instanceof Error ? error.message : "Transaction failed", {
+                //   duration: 5000,
+                //   position: "top-right",
+                // });
+    
+                // return {
+                //   success: false,
+                //   error: errorMessage
+                // };
+                console.log(error)
+            } 
+          
+            
+           // console.log('Executing transfer with params:', transferParams);
+  
+            // You can add more logic to handle transfer-specific operations
+            break;
+    
+          case 'swap':
+            const { token1, token2, amount, chain } = completion;
+        
+            const swapParams = {
+              fromToken: token1,
+              toToken: token2,
+              amount,
+              userAddress: account?.address,
+              chainId: chain || 'SN_MAIN',
+            };
+  
+            if (!swapParams.userAddress) {
+              toast.error("Please connect your wallet");
+              return false;
+            }
+  
+            const fromToken = findTokenBySymbol(swapParams.fromToken,validTokens);
+            const toToken =  findTokenBySymbol(swapParams.toToken,validTokens);
+            
+            if (!fromToken || !toToken) {
+              toast.error("One or both tokens not found");
+              return false;
+            }
+          
+            // Handle decimal amount
+            const samount = parseFloat(swapParams.amount);
+            if (isNaN(samount) || samount <= 0) {
+              toast.error("Please enter a valid amount");
+              return false;
+            }
+  
+            const toastId = toast.loading("Transaction pending...");
+  
+            try {
+              // You'll need to modify your StarknetSwap class to handle dynamic token pairs
+              const transactionHash = await starknetSwap.swap(
+                fromToken.address,
+                toToken.address,
+                swapParams.amount,
+                fromToken.decimals,
+                toToken.decimals
+              );
+              console.log(transactionHash)
+  
+                          // Dismiss the loading toast
+              toast.dismiss(toastId);
+              
+              // Show success toast
+              toast.success(`Transaction submitted!`, {
+                duration: 5000,
+                position: "top-right",
+              });
+  
+              return {
+                success: true,
+                transactionHash: transactionHash
+              };
+              
+            } catch (error) {
+                            // Dismiss the loading toast
+                toast.dismiss(toastId);
+                const errorMessage = error instanceof Error ? error.message : "Transaction failed";
+                // Show error toast
+                toast.error(error instanceof Error ? error.message : "Transaction failed", {
+                  duration: 5000,
+                  position: "top-right",
+                });
+    
+                return {
+                  success: false,
+                  error: errorMessage
+                };
+            } 
+          
+            console.log('Executing swap with params:', swapParams);
+            // Add your logic for handling swaps
+            break;
+  
+          case 'deploytoken':
+  
+          const { name, symbol, supply, uri } = completion;
+          const owner = account?.address; // Set owner as wallet address
+  
+          const config = {
+            starknetProvider: provider,
+            starknetChainId: STARKNET_CHAIN_ID,
+          };
+          
+  
+  
+          // Now you have all the token deployment parameters
+          const deployParams = {
+              name,
+              symbol,
+              initialSupply: supply,
+              owner,
+              uri: uri || '', // Use empty string if uri is not provided
+          };
+  
+          if (!deployParams.owner) {
+            toast.error("Please connect your wallet");
+            return false;
+          }
+  
+          if (!deployParams.name || deployParams.name === '') {
+            toast.error("the name is missing");
+            return false;
+          }
+  
+          if (!deployParams.symbol || deployParams.symbol === '') {
+            toast.error("the symbol is missing");
+            return false;
+          }
+  
+          // Handle decimal amount
+          const damount = parseFloat(deployParams.initialSupply);
+          if (isNaN(damount) || damount <= 0) {
+            toast.error("Please enter a valid amount");
+            return false;
+          }
+          
+          console.log('Deploying token with params:', deployParams);
+  
+          const toastId2 = toast.loading("Transaction pending...");
+  
+          try {
+            // You'll need to modify your StarknetSwap class to handle dynamic token pairs
+            const createResult = await createMemecoin(config as any, {
+              name: deployParams.name,
+              symbol: deployParams.symbol,
+              initialSupply: deployParams.initialSupply,
+              owner: account?.address as any,
+              starknetAccount: account as any,
+              sendAsync: sendAsync,
+            });
+  
+            console.log(createResult)
+  
+                        // Dismiss the loading toast
+            toast.dismiss(toastId2);
+            
+            // Show success toast
+            toast.success(`Transaction submitted!`, {
+              duration: 5000,
+              position: "top-right",
+            });
+  
+            return {
+              success: true,
+              transactionHash: createResult.transactionHash,
+              tokenAddress: createResult.tokenAddress // Include token address if available
+            };
+            
+          } catch (error) {
+                          // Dismiss the loading toast
+              toast.dismiss(toastId2);
+              const errorMessage = error instanceof Error ? error.message : "Transaction failed";
+              // Show error toast
+              toast.error(error instanceof Error ? error.message : "Transaction failed", {
+                duration: 5000,
+                position: "top-right",
+              });
+  
+              return {
+                success: false,
+                error: errorMessage
+              };
+          } 
+        
+  
+          
+            break;
+    
+          default:
+            console.log("Unknown action");
+            break;
+        }
+      } else {
+        console.log("No completion data found in response.");
+      }
+
   };
 
   const handleConfirmPromptInput = async () => {
@@ -305,13 +711,8 @@ const ChainChat = () => {
     
     setIsProcessing(true);
     try {
-      const result: any  = await executeTransaction(
-        response,
-        wallet.account,
-        erc20Contract,
-        avnuContract,
-        wallet
-      );
+      const result: any  = await handleConfirm();
+
 
       const newMessage: Message = {
         id: (messages.length + 3).toString(),
@@ -335,6 +736,7 @@ const ChainChat = () => {
           newMessage.text = `Your balance is ${result.balance}`;
         }
       } else {
+       
         newMessage.text = result.error || 'Transaction failed. Please try again.';
         newMessage.error = result.error;
       }
@@ -459,6 +861,7 @@ const ChainChat = () => {
           setMessages(prevMessages => [...prevMessages, newMessage1 as any]);
 
           handleTransactionResponse(response.data)
+
 
 
         } catch (error: any) {
@@ -628,16 +1031,7 @@ const ChainChat = () => {
   };
   
 
-  const handleDisconnect = async () => {
-    try {
-      setIsLoading(true);
-      await disconnectWallet();
-    } catch (error) {
-      console.error('Failed to disconnect:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   const tokenBalances = [
     { symbol: 'ETH', balance: '1.234', value: '2,468.00', change: 2.5 },
@@ -681,10 +1075,10 @@ const ChainChat = () => {
                 {/* Wallet Address */}
                 <div className="flex items-center px-2 py-1 sm:px-3 sm:py-1 bg-gray-700 rounded-full text-xs sm:text-sm text-gray-300">
                   <Wallet size={16} className="mr-2" />
-                  <span className="hidden xs:inline">{formatAddress(address)}</span>
-                  <span className="xs:hidden">{formatAddress(address).slice(0, 8)}...</span>
+                  <span className="hidden xs:inline">{formatAddress(address as string)}</span>
+                  <span className="xs:hidden">{formatAddress(address as string).slice(0, 8)}...</span>
                   <button
-                    onClick={() => handleCopy(wallet.account.address)} 
+                    onClick={() => handleCopy(address as string)} 
                     className="ml-2 p-1"
                   >
                     {copied ? (
@@ -697,7 +1091,7 @@ const ChainChat = () => {
 
                 {/* Disconnect Button */}
                 <button
-                  onClick={disconnectWallet}
+                  onClick={() => disconnect}
                   className="flex items-center px-2 py-1 sm:px-3 sm:py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full transition-colors"
                 >
                   <LogOut size={16} />
@@ -795,3 +1189,7 @@ const ChainChat = () => {
 };
 
 export default ChainChat;
+
+function formatBalance(balance: any, decimals: number) {
+  throw new Error('Function not implemented.');
+}

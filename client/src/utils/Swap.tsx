@@ -1,9 +1,10 @@
-import { Account, CallData, Call, uint256,cairo,BigNumberish } from 'starknet';
+import { Account, CallData, Call, uint256,cairo,BigNumberish, AccountInterface } from 'starknet';
 import { RpcProvider } from 'starknet';
 import axios from 'axios';
 
 import { toHex, parseUnits } from 'viem'
 ;
+import { SendAsyncFunction } from '../services/unraggable';
 
 // Vite-specific environment variable import
 
@@ -13,10 +14,12 @@ const accountAddress = import.meta.env.VITE_ACCOUNT_ADDRESS;
 class StarknetSwap {
   private provider: RpcProvider;
   private account: Account;
+  private sendAsync: SendAsyncFunction;
 
-  constructor(account) {
+  constructor(account: AccountInterface | Account , sendAsync: SendAsyncFunction) {
     this.provider = new RpcProvider({ nodeUrl: 'https://free-rpc.nethermind.io/mainnet-juno' });
-    this.account = account;
+    this.account = account as Account;
+    this.sendAsync = sendAsync;
   }
 
   public async swap(
@@ -86,8 +89,7 @@ class StarknetSwap {
   }
 
   private async executeTransactions(calls: Call[]): Promise<string> {
-    const response = await this.account.execute(calls);
-    await this.provider.waitForTransaction(response.transaction_hash);
+    const response = await this.sendAsync(calls);
     return response.transaction_hash;
   }
 

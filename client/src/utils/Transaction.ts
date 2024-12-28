@@ -52,6 +52,10 @@ interface ApiResponse {
 }
 
 
+const validTokens = tokensAll.map(token => ({
+  ...token,
+  logoUri: token.logoUri || '' // Convert null to empty string
+}));
 
 
 // Type guard to check if steps are for a transfer
@@ -103,385 +107,386 @@ const isTransferSteps = (steps: Steps): steps is TransferStep[] => {
     account: any,
     erc20Contract: Contract,
     avnuContract: Contract,
-    wallet: any
+
   ) => {
 
-    const starknetSwap = new StarknetSwap(wallet.account);
+    // const starknetSwap = new StarknetSwap(account);
 
-    if (response.result.completion && response.result.completion.length > 0) {
-      const action = response.result.completion[0].action;
-      const completion = response.result.completion[0];
+    // if (response.result.completion && response.result.completion.length > 0) {
+    //   const action = response.result.completion[0].action;
+    //   const completion = response.result.completion[0];
   
-      // Check for the action and handle different cases using a switch statement
-      switch (action) {
-        case 'transfer':
+    //   // Check for the action and handle different cases using a switch statement
+    //   switch (action) {
+    //     case 'transfer':
 
 
-          const { token1: token, address, amount: token_amount, chain: use_chain } = completion;
+    //       const { token1: token, address, amount: token_amount, chain: use_chain } = completion;
           
-          const transferParams = {
-            tokenSymbol: token,
-            toAddress: address,
-            token_amount,
-            fromAddress: wallet.account.address,
-            chainId: use_chain || 'SN_MAIN', // Default to mainnet if not specified
-          };
+    //       const transferParams = {
+    //         tokenSymbol: token,
+    //         toAddress: address,
+    //         token_amount,
+    //         fromAddress: account.address,
+    //         chainId: use_chain || 'SN_MAIN', // Default to mainnet if not specified
+    //       };
 
-          if (!transferParams.toAddress) {
-            toast.error("Please provide recipient");
-            return false;
-          }
+    //       if (!transferParams.toAddress) {
+    //         toast.error("Please provide recipient");
+    //         return false;
+    //       }
 
 
 
-          if (!transferParams.fromAddress) {
-            toast.error("Please connect your wallet");
-            return false;
-          }
+    //       if (!transferParams.fromAddress) {
+    //         toast.error("Please connect your wallet");
+    //         return false;
+    //       }
 
-                    // Check if address is a Starknet ID
-          if (transferParams.toAddress.endsWith('.stark')) {
-            try {
-              const resolvedAddress = await starknetIdNavigator.getAddressFromStarkName(transferParams.toAddress);
-              if (!resolvedAddress) {
-                toast.error("Could not resolve Starknet ID");
-                return false;
-              }
-              transferParams.toAddress = resolvedAddress;
-            } catch (error) {
-              toast.error("Error resolving Starknet ID");
-              return false;
-            }
-          }
+    //                 // Check if address is a Starknet ID
+    //       if (transferParams.toAddress.endsWith('.stark')) {
+    //         try {
+    //           const resolvedAddress = await starknetIdNavigator.getAddressFromStarkName(transferParams.toAddress);
+    //           if (!resolvedAddress) {
+    //             toast.error("Could not resolve Starknet ID");
+    //             return false;
+    //           }
+    //           transferParams.toAddress = resolvedAddress;
+    //         } catch (error) {
+    //           toast.error("Error resolving Starknet ID");
+    //           return false;
+    //         }
+    //       }
 
-          const toTransfer = findTokenBySymbol(transferParams.tokenSymbol,tokensAll);
+    //       const toTransfer = findTokenBySymbol(transferParams.tokenSymbol,validTokens);
 
-          if (!toTransfer) {
-            toast.error("Invalid token");
-            return false;
-          }
+    //       if (!toTransfer) {
+    //         toast.error("Invalid token");
+    //         return false;
+    //       }
 
-          // Handle decimal amount
-          const tamount = parseFloat(transferParams.token_amount);
-          if (isNaN(tamount) || tamount <= 0) {
-            toast.error("Please enter a valid amount");
-            return false;
-          }
+    //       // Handle decimal amount
+    //       const tamount = parseFloat(transferParams.token_amount);
+    //       if (isNaN(tamount) || tamount <= 0) {
+    //         toast.error("Please enter a valid amount");
+    //         return false;
+    //       }
 
-          const toastIdp = toast.loading("Transaction pending...");
+    //       const toastIdp = toast.loading("Transaction pending...");
 
-          try {
+    //       try {
 
-            const erc20Contract = new Contract(
-              Erc20Abi as any,
-              toTransfer.address,
-              wallet.account as any,
-            )
+    //         const erc20Contract = new Contract(
+    //           Erc20Abi as any,
+    //           toTransfer.address,
+    //           account as any,
+    //         )
 
-            // You'll need to modify your StarknetSwap class to handle dynamic token pairs
-            const transactionHash = await erc20Contract.transfer(
-              transferParams.toAddress,
-              parseInputAmountToUint256(transferParams.token_amount),
-            );
 
-            console.log(transactionHash)
+    //         // You'll need to modify your StarknetSwap class to handle dynamic token pairs
+    //         const transactionHash = await erc20Contract.transfer(
+    //           transferParams.toAddress,
+    //           parseInputAmountToUint256(transferParams.token_amount),
+    //         );
 
-                        // Dismiss the loading toast
-            toast.dismiss(toastIdp);
+    //         console.log(transactionHash)
+
+    //                     // Dismiss the loading toast
+    //         toast.dismiss(toastIdp);
             
-            // Show success toast
-            toast.success(`Transaction submitted!`, {
-              duration: 5000,
-              position: "top-right",
-            });
+    //         // Show success toast
+    //         toast.success(`Transaction submitted!`, {
+    //           duration: 5000,
+    //           position: "top-right",
+    //         });
 
-            return {
-              success: true,
-              transactionHash: transactionHash.transaction_hash
-            };
+    //         return {
+    //           success: true,
+    //           transactionHash: transactionHash.transaction_hash
+    //         };
             
-          } catch (error) {
-                          // Dismiss the loading toast
-              toast.dismiss(toastIdp);
-              const errorMessage = error instanceof Error ? error.message : "Transaction failed";
-              // Show error toast
-              toast.error(error instanceof Error ? error.message : "Transaction failed", {
-                duration: 5000,
-                position: "top-right",
-              });
+    //       } catch (error) {
+    //                       // Dismiss the loading toast
+    //           toast.dismiss(toastIdp);
+    //           const errorMessage = error instanceof Error ? error.message : "Transaction failed";
+    //           // Show error toast
+    //           toast.error(error instanceof Error ? error.message : "Transaction failed", {
+    //             duration: 5000,
+    //             position: "top-right",
+    //           });
   
-              return {
-                success: false,
-                error: errorMessage
-              };
-          } 
+    //           return {
+    //             success: false,
+    //             error: errorMessage
+    //           };
+    //       } 
         
           
-          console.log('Executing transfer with params:', transferParams);
+    //       console.log('Executing transfer with params:', transferParams);
 
-          // You can add more logic to handle transfer-specific operations
-          break;
+    //       // You can add more logic to handle transfer-specific operations
+    //       break;
 
-        case 'balance':
+    //     case 'balance':
 
 
-          const { token1: token_check, } = completion;
+    //       const { token1: token_check, } = completion;
           
 
 
 
 
-          if (!token_check || token_check === '') {
-            toast.error("Please provide token to check");
-            return false;
-          }
+    //       if (!token_check || token_check === '') {
+    //         toast.error("Please provide token to check");
+    //         return false;
+    //       }
 
-          const toCheckBalance = findTokenBySymbol(token_check,tokensAll);
+    //       const toCheckBalance = findTokenBySymbol(token_check,validTokens);
 
-          if (!toCheckBalance) {
-            toast.error("Invalid token");
-            return false;
-          }
+    //       if (!toCheckBalance) {
+    //         toast.error("Invalid token");
+    //         return false;
+    //       }
 
 
-          const toastIdp2 = toast.loading("Transaction pending...");
+    //       const toastIdp2 = toast.loading("Transaction pending...");
 
-          try {
+    //       try {
 
-            const erc20Contract = new Contract(
-              Erc20Abi as any,
-              toCheckBalance.address,
-              wallet.account as any,
-            )
+    //         const erc20Contract = new Contract(
+    //           Erc20Abi as any,
+    //           toCheckBalance.address,
+    //           account as any,
+    //         )
 
-            // You'll need to modify your StarknetSwap class to handle dynamic token pairs
-            const balance = await erc20Contract.balance_of(
-              wallet.account.address
-            );
+    //         // You'll need to modify your StarknetSwap class to handle dynamic token pairs
+    //         const balance = await erc20Contract.balance_of(
+    //           account.address
+    //         );
 
-             const readableBalance =  formatBalance(balance, toCheckBalance.decimals)
+    //          const readableBalance =  formatBalance(balance, toCheckBalance.decimals)
 
-             const transactionHash = '0x0'
+    //          const transactionHash = '0x0'
 
-             console.log(readableBalance)
+    //          console.log(readableBalance)
 
-                        // Dismiss the loading toast
-            toast.dismiss(toastIdp2);
+    //                     // Dismiss the loading toast
+    //         toast.dismiss(toastIdp2);
             
-            // Show success toast
-            toast.success(`Transaction submitted!`, {
-              duration: 5000,
-              position: "top-right",
-            });
+    //         // Show success toast
+    //         toast.success(`Transaction submitted!`, {
+    //           duration: 5000,
+    //           position: "top-right",
+    //         });
 
-            return {
-              success: true,
-              transactionHash: transactionHash,
-              balance: readableBalance
-            };
+    //         return {
+    //           success: true,
+    //           transactionHash: transactionHash,
+    //           balance: readableBalance
+    //         };
             
-          } catch (error) {
-                          // Dismiss the loading toast
-              // toast.dismiss(toastIdp2);
-              // const errorMessage = error instanceof Error ? error.message : "Transaction failed";
-              // // Show error toast
-              // toast.error(error instanceof Error ? error.message : "Transaction failed", {
-              //   duration: 5000,
-              //   position: "top-right",
-              // });
+    //       } catch (error) {
+    //                       // Dismiss the loading toast
+    //           // toast.dismiss(toastIdp2);
+    //           // const errorMessage = error instanceof Error ? error.message : "Transaction failed";
+    //           // // Show error toast
+    //           // toast.error(error instanceof Error ? error.message : "Transaction failed", {
+    //           //   duration: 5000,
+    //           //   position: "top-right",
+    //           // });
   
-              // return {
-              //   success: false,
-              //   error: errorMessage
-              // };
-              console.log(error)
-          } 
+    //           // return {
+    //           //   success: false,
+    //           //   error: errorMessage
+    //           // };
+    //           console.log(error)
+    //       } 
         
           
-         // console.log('Executing transfer with params:', transferParams);
+    //      // console.log('Executing transfer with params:', transferParams);
 
-          // You can add more logic to handle transfer-specific operations
-          break;
+    //       // You can add more logic to handle transfer-specific operations
+    //       break;
   
-        case 'swap':
-          const { token1, token2, amount, chain } = completion;
+    //     case 'swap':
+    //       const { token1, token2, amount, chain } = completion;
       
-          const swapParams = {
-            fromToken: token1,
-            toToken: token2,
-            amount,
-            userAddress: wallet.account.address,
-            chainId: chain || 'SN_MAIN',
-          };
+    //       const swapParams = {
+    //         fromToken: token1,
+    //         toToken: token2,
+    //         amount,
+    //         userAddress: account.address,
+    //         chainId: chain || 'SN_MAIN',
+    //       };
 
-          if (!swapParams.userAddress) {
-            toast.error("Please connect your wallet");
-            return false;
-          }
+    //       if (!swapParams.userAddress) {
+    //         toast.error("Please connect your wallet");
+    //         return false;
+    //       }
 
-          const fromToken = findTokenBySymbol(swapParams.fromToken,tokensAll);
-          const toToken =  findTokenBySymbol(swapParams.toToken,tokensAll);
+    //       const fromToken = findTokenBySymbol(swapParams.fromToken,validTokens);
+    //       const toToken =  findTokenBySymbol(swapParams.toToken,validTokens);
           
-          if (!fromToken || !toToken) {
-            toast.error("One or both tokens not found");
-            return false;
-          }
+    //       if (!fromToken || !toToken) {
+    //         toast.error("One or both tokens not found");
+    //         return false;
+    //       }
         
-          // Handle decimal amount
-          const samount = parseFloat(swapParams.amount);
-          if (isNaN(samount) || samount <= 0) {
-            toast.error("Please enter a valid amount");
-            return false;
-          }
+    //       // Handle decimal amount
+    //       const samount = parseFloat(swapParams.amount);
+    //       if (isNaN(samount) || samount <= 0) {
+    //         toast.error("Please enter a valid amount");
+    //         return false;
+    //       }
 
-          const toastId = toast.loading("Transaction pending...");
+    //       const toastId = toast.loading("Transaction pending...");
 
-          try {
-            // You'll need to modify your StarknetSwap class to handle dynamic token pairs
-            const transactionHash = await starknetSwap.swap(
-              fromToken.address,
-              toToken.address,
-              swapParams.amount,
-              fromToken.decimals,
-              toToken.decimals
-            );
-            console.log(transactionHash)
+    //       try {
+    //         // You'll need to modify your StarknetSwap class to handle dynamic token pairs
+    //         const transactionHash = await starknetSwap.swap(
+    //           fromToken.address,
+    //           toToken.address,
+    //           swapParams.amount,
+    //           fromToken.decimals,
+    //           toToken.decimals
+    //         );
+    //         console.log(transactionHash)
 
-                        // Dismiss the loading toast
-            toast.dismiss(toastId);
+    //                     // Dismiss the loading toast
+    //         toast.dismiss(toastId);
             
-            // Show success toast
-            toast.success(`Transaction submitted!`, {
-              duration: 5000,
-              position: "top-right",
-            });
+    //         // Show success toast
+    //         toast.success(`Transaction submitted!`, {
+    //           duration: 5000,
+    //           position: "top-right",
+    //         });
 
-            return {
-              success: true,
-              transactionHash: transactionHash
-            };
+    //         return {
+    //           success: true,
+    //           transactionHash: transactionHash
+    //         };
             
-          } catch (error) {
-                          // Dismiss the loading toast
-              toast.dismiss(toastId);
-              const errorMessage = error instanceof Error ? error.message : "Transaction failed";
-              // Show error toast
-              toast.error(error instanceof Error ? error.message : "Transaction failed", {
-                duration: 5000,
-                position: "top-right",
-              });
+    //       } catch (error) {
+    //                       // Dismiss the loading toast
+    //           toast.dismiss(toastId);
+    //           const errorMessage = error instanceof Error ? error.message : "Transaction failed";
+    //           // Show error toast
+    //           toast.error(error instanceof Error ? error.message : "Transaction failed", {
+    //             duration: 5000,
+    //             position: "top-right",
+    //           });
   
-              return {
-                success: false,
-                error: errorMessage
-              };
-          } 
+    //           return {
+    //             success: false,
+    //             error: errorMessage
+    //           };
+    //       } 
         
-          console.log('Executing swap with params:', swapParams);
-          // Add your logic for handling swaps
-          break;
+    //       console.log('Executing swap with params:', swapParams);
+    //       // Add your logic for handling swaps
+    //       break;
 
-        case 'deploytoken':
+    //     case 'deploytoken':
 
-        const { name, symbol, supply, uri } = completion;
-        const owner = wallet.account.address; // Set owner as wallet address
+    //     const { name, symbol, supply, uri } = completion;
+    //     const owner = account.address; // Set owner as wallet address
 
-        const config = {
-          starknetProvider: provider,
-          starknetChainId: STARKNET_CHAIN_ID,
-        };
+    //     const config = {
+    //       starknetProvider: provider,
+    //       starknetChainId: STARKNET_CHAIN_ID,
+    //     };
         
 
 
-        // Now you have all the token deployment parameters
-        const deployParams = {
-            name,
-            symbol,
-            initialSupply: supply,
-            owner,
-            uri: uri || '', // Use empty string if uri is not provided
-        };
+    //     // Now you have all the token deployment parameters
+    //     const deployParams = {
+    //         name,
+    //         symbol,
+    //         initialSupply: supply,
+    //         owner,
+    //         uri: uri || '', // Use empty string if uri is not provided
+    //     };
 
-        if (!deployParams.owner) {
-          toast.error("Please connect your wallet");
-          return false;
-        }
+    //     if (!deployParams.owner) {
+    //       toast.error("Please connect your wallet");
+    //       return false;
+    //     }
 
-        if (!deployParams.name || deployParams.name === '') {
-          toast.error("the name is missing");
-          return false;
-        }
+    //     if (!deployParams.name || deployParams.name === '') {
+    //       toast.error("the name is missing");
+    //       return false;
+    //     }
 
-        if (!deployParams.symbol || deployParams.symbol === '') {
-          toast.error("the symbol is missing");
-          return false;
-        }
+    //     if (!deployParams.symbol || deployParams.symbol === '') {
+    //       toast.error("the symbol is missing");
+    //       return false;
+    //     }
 
-        // Handle decimal amount
-        const damount = parseFloat(deployParams.initialSupply);
-        if (isNaN(damount) || damount <= 0) {
-          toast.error("Please enter a valid amount");
-          return false;
-        }
+    //     // Handle decimal amount
+    //     const damount = parseFloat(deployParams.initialSupply);
+    //     if (isNaN(damount) || damount <= 0) {
+    //       toast.error("Please enter a valid amount");
+    //       return false;
+    //     }
         
-        console.log('Deploying token with params:', deployParams);
+    //     console.log('Deploying token with params:', deployParams);
 
-        const toastId2 = toast.loading("Transaction pending...");
+    //     const toastId2 = toast.loading("Transaction pending...");
 
-        try {
-          // You'll need to modify your StarknetSwap class to handle dynamic token pairs
-          const createResult = await createMemecoin(config as any, {
-            name: deployParams.name,
-            symbol: deployParams.symbol,
-            initialSupply: deployParams.initialSupply,
-            owner: wallet.account.address,
-            starknetAccount: wallet.account,
-          });
+    //     try {
+    //       // You'll need to modify your StarknetSwap class to handle dynamic token pairs
+    //       const createResult = await createMemecoin(config as any, {
+    //         name: deployParams.name,
+    //         symbol: deployParams.symbol,
+    //         initialSupply: deployParams.initialSupply,
+    //         owner: account.address,
+    //         starknetAccount: account,
+    //       });
 
-          console.log(createResult)
+    //       console.log(createResult)
 
-                      // Dismiss the loading toast
-          toast.dismiss(toastId2);
+    //                   // Dismiss the loading toast
+    //       toast.dismiss(toastId2);
           
-          // Show success toast
-          toast.success(`Transaction submitted!`, {
-            duration: 5000,
-            position: "top-right",
-          });
+    //       // Show success toast
+    //       toast.success(`Transaction submitted!`, {
+    //         duration: 5000,
+    //         position: "top-right",
+    //       });
 
-          return {
-            success: true,
-            transactionHash: createResult.transactionHash,
-            tokenAddress: createResult.tokenAddress // Include token address if available
-          };
+    //       return {
+    //         success: true,
+    //         transactionHash: createResult.transactionHash,
+    //         tokenAddress: createResult.tokenAddress // Include token address if available
+    //       };
           
-        } catch (error) {
-                        // Dismiss the loading toast
-            toast.dismiss(toastId2);
-            const errorMessage = error instanceof Error ? error.message : "Transaction failed";
-            // Show error toast
-            toast.error(error instanceof Error ? error.message : "Transaction failed", {
-              duration: 5000,
-              position: "top-right",
-            });
+    //     } catch (error) {
+    //                     // Dismiss the loading toast
+    //         toast.dismiss(toastId2);
+    //         const errorMessage = error instanceof Error ? error.message : "Transaction failed";
+    //         // Show error toast
+    //         toast.error(error instanceof Error ? error.message : "Transaction failed", {
+    //           duration: 5000,
+    //           position: "top-right",
+    //         });
 
-            return {
-              success: false,
-              error: errorMessage
-            };
-        } 
+    //         return {
+    //           success: false,
+    //           error: errorMessage
+    //         };
+    //     } 
       
 
         
-          break;
+    //       break;
   
-        default:
-          console.log("Unknown action");
-          break;
-      }
-    } else {
-      console.log("No completion data found in response.");
-    }
+    //     default:
+    //       console.log("Unknown action");
+    //       break;
+    //   }
+    // } else {
+    //   console.log("No completion data found in response.");
+    // }
 
   }
 
@@ -640,18 +645,16 @@ const executeTransaction = async (
   apiResponse: ApiResponse,
   account: any,
   erc20Contract: Contract,
-  avnuContract: Contract,
-  selectedWalletSWO: any
+  avnuContract: Contract
 ) => {
   try {
-    const result = await handleTransaction(
-      apiResponse,
-      account,
-      erc20Contract,
-      avnuContract,
-      selectedWalletSWO
-    );
-    return result;
+    // const result = await handleTransaction(
+    //   apiResponse,
+    //   account,
+    //   erc20Contract,
+    //   avnuContract
+    // );
+   // return result;
   } catch (error) {
     console.error("Failed to execute transaction:", error);
   }
